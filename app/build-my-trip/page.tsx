@@ -103,24 +103,50 @@ export default function BuildMyTrip() {
   };
 
   const submitTrip = async () => {
-    if (!canContinue()) return;
+  if (!canContinue()) return;
 
-    setLoading(true);
+  setLoading(true);
 
-    /*
-      Stripe will be connected here.
+  try {
+    const response = await fetch("/api/create-checkout-session", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        tripData: {
+          destination,
+          unsureDestination,
+          dates,
+          duration,
+          travellers,
+          travellerCount,
+          budget,
+          flightsIncluded,
+          selectedInterests,
+          otherInterests,
+          travelStyle,
+          pace,
+          tripDetails,
+          name,
+          email,
+        },
+      }),
+    });
 
-      The trip brief should only be sent to OUTBOUND
-      after successful payment has been confirmed by Stripe.
-    */
+    const data = await response.json();
 
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    if (!response.ok || !data.url) {
+      throw new Error(data.error || "Unable to start checkout.");
+    }
 
+    window.location.href = data.url;
+  } catch (error) {
+    console.error("Checkout error:", error);
+    alert("Something went wrong starting payment. Please try again.");
     setLoading(false);
-    setSubmitted(true);
-
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
+  }
+};
 
   if (submitted) {
     return (
