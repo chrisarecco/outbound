@@ -39,7 +39,7 @@ export async function POST(req: Request) {
         "Customer";
 
       await resend.emails.send({
-        from: "OUTBOUND <onboarding@resend.dev>",
+        from: "OUTBOUND <trips@outbound-travel.com>",
         to: [process.env.OUTBOUND_EMAIL!],
         subject: `PAID TRIP — ${customerName}`,
         html: `
