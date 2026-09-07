@@ -38,6 +38,7 @@ export async function POST(req: Request) {
         session.customer_details?.name ||
         "Customer";
 
+      // Email OUTBOUND with the paid trip brief
       await resend.emails.send({
         from: "OUTBOUND <trips@outbound-travel.com>",
         to: [process.env.OUTBOUND_EMAIL!],
@@ -71,6 +72,68 @@ export async function POST(req: Request) {
           <p><strong>Stripe session:</strong> ${session.id}</p>
         `,
       });
+
+      // Confirmation email to the customer
+      if (customerEmail) {
+        await resend.emails.send({
+          from: "OUTBOUND <trips@outbound-travel.com>",
+          to: [customerEmail],
+          subject: "Your OUTBOUND trip is being planned ✈️",
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #111;">
+              
+              <h1 style="font-size: 36px; margin-bottom: 10px;">
+                You're going places.
+              </h1>
+
+              <p style="font-size: 18px; color: #555;">
+                Hi ${customerName},
+              </p>
+
+              <p style="font-size: 16px; line-height: 1.6; color: #555;">
+                We've received your payment and your OUTBOUND trip is now being prepared.
+              </p>
+
+              <div style="background: #f5f3ee; padding: 24px; border-radius: 16px; margin: 30px 0;">
+                
+                <p style="font-weight: bold; margin-top: 0;">
+                  Your Personalised Trip
+                </p>
+
+                <p style="color: #555; line-height: 1.6;">
+                  We'll build your trip around your destination, dates, budget,
+                  interests and travel style.
+                </p>
+
+                <p style="color: #555; line-height: 1.6;">
+                  Your plan includes your route, day-by-day itinerary,
+                  accommodation recommendations, transport, activities,
+                  restaurants, estimated costs, booking links and useful local tips.
+                </p>
+
+              </div>
+
+              <h2 style="font-size: 22px;">
+                What happens next?
+              </h2>
+
+              <p style="color: #555; line-height: 1.6;">
+                We'll prepare your personalised itinerary and send it to you by
+                email within 48 hours.
+              </p>
+
+              <p style="margin-top: 35px; color: #555;">
+                Thanks for choosing OUTBOUND.
+              </p>
+
+              <p style="font-weight: bold;">
+                OUTBOUND.
+              </p>
+
+            </div>
+          `,
+        });
+      }
     }
 
     return NextResponse.json({ received: true });
