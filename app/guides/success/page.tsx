@@ -1,23 +1,6 @@
-"use client";
-
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
-
-const guideNames: Record<string, string> = {
-  thailand: "Thailand",
-  vietnam: "Vietnam",
-  indonesia: "Indonesia",
-  japan: "Japan",
-  philippines: "The Philippines",
-  australia: "Australia's East Coast",
-};
 
 export default function GuideSuccessPage() {
-  const searchParams = useSearchParams();
-
-  const guide = searchParams.get("guide") || "";
-  const guideName = guideNames[guide.toLowerCase()] || "your travel guide";
-
   return (
     <main className="min-h-screen bg-white text-black">
       <div className="mx-auto flex min-h-screen max-w-3xl items-center justify-center px-6 py-20">
@@ -35,7 +18,7 @@ export default function GuideSuccessPage() {
           </h1>
 
           <p className="mx-auto mt-6 max-w-xl text-lg leading-8 text-black/60">
-            Thanks for purchasing the {guideName} guide.
+            Thanks for purchasing your OUTBOUND travel guide.
             Your payment has been received successfully.
           </p>
 
@@ -45,12 +28,12 @@ export default function GuideSuccessPage() {
             </p>
 
             <h2 className="mt-3 text-2xl font-black">
-              {guideName}
+              Your guide is on its way.
             </h2>
 
             <p className="mt-4 text-base leading-7 text-black/60">
-              We're getting your guide ready. You'll receive your guide
-              using the email address provided during checkout.
+              We've received your payment and are sending your PDF guide to
+              the email address you used at checkout.
             </p>
           </div>
 
