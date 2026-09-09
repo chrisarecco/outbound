@@ -4,6 +4,15 @@ import { Resend } from "resend";
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 const resend = new Resend(process.env.RESEND_API_KEY!);
 
+const GUIDE_PRICES: Record<string, string> = {
+  thailand: "price_1UDmP1LEJD8lGtcNdQxBTRWi",
+  vietnam: "price_1UDmRRLEJD8lGtcNcXQgW87A",
+  indonesia: "price_1UDmSJLEJD8lGtcNVvwRzzLJ",
+  japan: "price_1UDmT7LEJD8lGtcNgiAhhgb8",
+  philippines: "price_1UDmU5LEJD8lGtcNbQ0qPSjD",
+  australia: "price_1UDmUtLEJD8lGtcNLVOs51qc",
+};
+
 const GUIDE_NAMES: Record<string, string> = {
   thailand: "Thailand",
   vietnam: "Vietnam",
@@ -59,74 +68,117 @@ export async function POST(req: Request) {
 
     const metadata = session.metadata || {};
 
+    console.log("=================================");
+    console.log("STRIPE CHECKOUT COMPLETED");
+    console.log("Session:", session.id);
+    console.log("Metadata:", metadata);
+    console.log("=================================");
+
     /*
      * ============================================================
-     * GUIDE PURCHASE
+     * DETECT WHETHER THIS IS A TRAVEL GUIDE PURCHASE
      * ============================================================
      */
 
+    let purchasedGuide = "";
+
     if (metadata.product_type === "travel_guide") {
-      const guide = metadata.guide?.toLowerCase();
+      purchasedGuide = metadata.guide?.toLowerCase() || "";
+    }
+
+    /*
+     * Also check the actual Stripe price.
+     * This protects us if metadata is missing.
+     */
+
+    if (!purchasedGuide) {
+      const lineItems = await stripe.checkout.sessions.listLineItems(
+        session.id,
+        {
+          limit: 10,
+        }
+      );
+
+      for (const item of lineItems.data) {
+        const priceId =
+          typeof item.price === "string"
+            ? item.price
+            : item.price?.id;
+
+        const matchingGuide = Object.entries(GUIDE_PRICES).find(
+          ([, guidePriceId]) => guidePriceId === priceId
+        );
+
+        if (matchingGuide) {
+          purchasedGuide = matchingGuide[0];
+          break;
+        }
+      }
+    }
+
+    /*
+     * ============================================================
+     * TRAVEL GUIDE PURCHASE
+     * ============================================================
+     */
+
+    if (purchasedGuide && GUIDE_NAMES[purchasedGuide]) {
+      const guideName = GUIDE_NAMES[purchasedGuide];
+      const filename = GUIDE_FILES[purchasedGuide];
+
       const customerEmail =
         session.customer_details?.email ||
         metadata.email ||
         "";
 
-      if (!guide || !GUIDE_NAMES[guide]) {
-        console.error("Unknown guide:", guide);
-
-        return new Response("Unknown guide", {
-          status: 400,
-        });
-      }
-
       if (!customerEmail) {
-        console.error("No customer email found for guide purchase.");
+        console.error(
+          "Guide purchase has no customer email."
+        );
 
         return new Response("Missing customer email", {
           status: 400,
         });
       }
 
-      const guideName = GUIDE_NAMES[guide];
-      const filename = GUIDE_FILES[guide];
-
-      /*
-       * The PDF is publicly available at:
-       *
-       * https://outbound-travel.com/guides/filename.pdf
-       *
-       * We fetch it and attach it directly to the customer's email.
-       */
-
       const guideUrl =
         `https://outbound-travel.com/guides/${filename}`;
 
-      console.log("Fetching guide PDF:", guideUrl);
+      console.log("GUIDE PURCHASE DETECTED");
+      console.log("Guide:", purchasedGuide);
+      console.log("Customer:", customerEmail);
+      console.log("PDF:", guideUrl);
+
+      /*
+       * Fetch the PDF from the deployed website.
+       */
 
       const pdfResponse = await fetch(guideUrl);
 
       if (!pdfResponse.ok) {
         console.error(
-          "Unable to fetch guide PDF:",
+          "Could not fetch PDF:",
           pdfResponse.status,
           pdfResponse.statusText
         );
 
-        return new Response("Unable to fetch guide PDF", {
+        return new Response("Could not fetch guide PDF", {
           status: 500,
         });
       }
 
       const pdfArrayBuffer = await pdfResponse.arrayBuffer();
-
       const pdfBuffer = Buffer.from(pdfArrayBuffer);
 
       console.log(
-        `Sending ${guideName} guide to ${customerEmail}`
+        `PDF downloaded successfully: ${pdfBuffer.length} bytes`
       );
 
-      await resend.emails.send({
+      /*
+       * Send the guide to the customer.
+       */
+
+      const emailResult = await resend.emails.send({
         from: "OUTBOUND <trips@outbound-travel.com>",
         to: customerEmail,
         subject: `Your OUTBOUND ${guideName} guide is ready ✈️`,
@@ -151,27 +203,30 @@ export async function POST(req: Request) {
 
               <p style="font-size: 17px; line-height: 1.6; color: #555555;">
                 Thanks for choosing OUTBOUND.
-                Your travel guide is attached to this email and is ready to download.
+                Your travel guide is attached to this email and is ready to use.
               </p>
 
               <p style="font-size: 17px; line-height: 1.6; color: #555555;">
-                Inside you'll find practical route advice, destination recommendations
-                and the information you need to plan a better trip.
+                Inside you'll find practical route advice, destination
+                recommendations and the information you need to plan a better trip.
               </p>
 
               <div style="margin-top: 30px; padding: 20px; background: #ffffff; border-radius: 16px;">
-                <strong>Your guide:</strong><br />
+                <strong>Your guide</strong><br />
                 ${guideName}<br /><br />
-                <strong>Format:</strong><br />
+
+                <strong>Format</strong><br />
                 PDF
               </div>
 
             </div>
 
             <div style="padding: 30px 0; font-size: 13px; line-height: 1.6; color: #888888;">
-              If you have any problems accessing your guide, reply to this email
-              and we'll help you out.
+              If you have any problems accessing your guide, simply reply to
+              this email and we'll help you out.
+
               <br /><br />
+
               OUTBOUND.<br />
               Travel planning, rethought.
             </div>
@@ -187,7 +242,8 @@ export async function POST(req: Request) {
       });
 
       console.log(
-        `Guide successfully delivered to ${customerEmail}`
+        "Guide email sent successfully:",
+        emailResult
       );
 
       return new Response("Guide delivered", {
@@ -197,11 +253,29 @@ export async function POST(req: Request) {
 
     /*
      * ============================================================
-     * PERSONALISED TRIP PURCHASE
+     * PERSONALISED TRIP
      * ============================================================
      *
-     * This preserves the existing £39.99 Build My Trip workflow.
+     * IMPORTANT:
+     * We only enter this section if this actually looks like
+     * a personalised trip purchase.
      */
+
+    const isPersonalisedTrip =
+      Boolean(metadata.destination) ||
+      Boolean(metadata.tripDetails) ||
+      Boolean(metadata.travelStyle) ||
+      Boolean(metadata.pace);
+
+    if (!isPersonalisedTrip) {
+      console.error(
+        "Unrecognised Stripe checkout. No email sent."
+      );
+
+      return new Response("Unrecognised checkout", {
+        status: 200,
+      });
+    }
 
     const customerEmail =
       session.customer_details?.email ||
@@ -211,7 +285,9 @@ export async function POST(req: Request) {
     const customerName = metadata.name || "";
 
     if (!customerEmail) {
-      console.error("No customer email found for personalised trip.");
+      console.error(
+        "Personalised trip has no customer email."
+      );
 
       return new Response("Missing customer email", {
         status: 400,
@@ -224,19 +300,24 @@ export async function POST(req: Request) {
         <h1>New OUTBOUND personalised trip</h1>
 
         <p><strong>Customer:</strong> ${customerName}</p>
+
         <p><strong>Email:</strong> ${customerEmail}</p>
 
         <hr />
 
         <h2>Trip details</h2>
 
-        <p><strong>Destination:</strong> ${metadata.destination || "Not specified"}</p>
+        <p><strong>Destination:</strong> ${
+          metadata.destination || "Not specified"
+        }</p>
 
         <p><strong>Unsure destination:</strong> ${
           metadata.unsureDestination || "No"
         }</p>
 
-        <p><strong>Dates:</strong> ${metadata.dates || "Not specified"}</p>
+        <p><strong>Dates:</strong> ${
+          metadata.dates || "Not specified"
+        }</p>
 
         <p><strong>Duration:</strong> ${
           metadata.duration || "Not specified"
@@ -289,20 +370,14 @@ export async function POST(req: Request) {
       </div>
     `;
 
-    /*
-     * Email OUTBOUND about the paid personalised trip.
-     */
-
     await resend.emails.send({
       from: "OUTBOUND <trips@outbound-travel.com>",
       to: process.env.OUTBOUND_EMAIL!,
-      subject: `New paid trip — ${metadata.destination || "Destination TBD"}`,
+      subject: `New paid trip — ${
+        metadata.destination || "Destination TBD"
+      }`,
       html: tripSummary,
     });
-
-    /*
-     * Confirmation email to customer.
-     */
 
     await resend.emails.send({
       from: "OUTBOUND <trips@outbound-travel.com>",
@@ -367,7 +442,10 @@ export async function POST(req: Request) {
       status: 200,
     });
   } catch (error) {
-    console.error("Stripe webhook processing error:", error);
+    console.error(
+      "Stripe webhook processing error:",
+      error
+    );
 
     return new Response("Webhook processing failed", {
       status: 500,
