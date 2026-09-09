@@ -38,20 +38,50 @@ const destinations = [
 const guides = [
   {
     title: "Thailand",
-    description: "The ultimate guide to travelling Thailand.",
+    slug: "thailand",
+    description:
+      "The ultimate guide to travelling Thailand.",
     price: "£9.99",
     image: "/images/thailand.png",
   },
   {
     title: "Vietnam",
-    description: "Everything you need for an unforgettable Vietnam trip.",
+    slug: "vietnam",
+    description:
+      "Everything you need for an unforgettable Vietnam trip.",
     price: "£9.99",
     image: "/images/vietnam.png",
   },
   {
-    title: "Australia",
-    description: "How to make the most of the world's biggest road trip.",
-    price: "£12.99",
+    title: "Indonesia",
+    slug: "indonesia",
+    description:
+      "Island-hopping, surf, culture and the best of Indonesia.",
+    price: "£9.99",
+    image: "/images/indonesia.png",
+  },
+  {
+    title: "Japan",
+    slug: "japan",
+    description:
+      "A practical guide to planning a better Japan trip.",
+    price: "£9.99",
+    image: "/images/japan.png",
+  },
+  {
+    title: "The Philippines",
+    slug: "philippines",
+    description:
+      "Island-hopping, beaches and the best way to see the Philippines.",
+    price: "£9.99",
+    image: "/images/philippines.png",
+  },
+  {
+    title: "Australia's East Coast",
+    slug: "australia",
+    description:
+      "How to make the most of Australia's ultimate east coast adventure.",
+    price: "£9.99",
     image: "/images/australia.png",
   },
 ];
@@ -259,7 +289,9 @@ export default function Home() {
 
                 <div
                   className="absolute inset-0 bg-cover bg-center transition duration-700 group-hover:scale-105"
-                  style={{ backgroundImage: `url('${destination.image}')` }}
+                  style={{
+                    backgroundImage: `url('${destination.image}')`,
+                  }}
                 />
 
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
@@ -719,7 +751,7 @@ export default function Home() {
 
             <a
               href="/guides"
-              className="text-sm font-bold underline underline-offset-4"
+              className="text-sm font-bold underline underline-offset-4 transition hover:text-white/60"
             >
               See all guides →
             </a>
@@ -727,18 +759,20 @@ export default function Home() {
           </div>
 
 
-          <div className="grid gap-4 sm:gap-5 md:grid-cols-3">
+          <div className="grid gap-4 sm:gap-5 md:grid-cols-2 lg:grid-cols-3">
 
             {guides.map((guide) => (
               <a
-                key={guide.title}
-                href={`/guides/${guide.title.toLowerCase()}`}
-                className="group overflow-hidden rounded-2xl bg-[#1b1b1b]"
+                key={guide.slug}
+                href={`/guides/${guide.slug}`}
+                className="group overflow-hidden rounded-2xl bg-[#1b1b1b] transition hover:bg-[#222]"
               >
 
                 <div
                   className="h-56 bg-cover bg-center transition duration-700 group-hover:scale-105 sm:h-64"
-                  style={{ backgroundImage: `url('${guide.image}')` }}
+                  style={{
+                    backgroundImage: `url('${guide.image}')`,
+                  }}
                 />
 
                 <div className="p-6 sm:p-7">
@@ -751,13 +785,13 @@ export default function Home() {
                         OUTBOUND GUIDE
                       </p>
 
-                      <h3 className="mt-2 text-2xl font-black">
+                      <h3 className="mt-2 text-2xl font-black tracking-[-0.03em]">
                         {guide.title}
                       </h3>
 
                     </div>
 
-                    <span className="text-lg font-bold">
+                    <span className="shrink-0 text-lg font-bold">
                       {guide.price}
                     </span>
 
@@ -767,7 +801,7 @@ export default function Home() {
                     {guide.description}
                   </p>
 
-                  <div className="mt-6 text-sm font-bold">
+                  <div className="mt-6 text-sm font-bold transition group-hover:translate-x-1">
                     View guide →
                   </div>
 
@@ -843,43 +877,45 @@ export default function Home() {
             </div>
 
 
-<div className="grid grid-cols-2 gap-x-12 gap-y-4 text-sm text-white/50 sm:gap-x-16">
-  <a href="/destinations" className="hover:text-white">
-    Destinations
-  </a>
+            <div className="grid grid-cols-2 gap-x-12 gap-y-4 text-sm text-white/50 sm:gap-x-16">
 
-  <a href="/guides" className="hover:text-white">
-    Travel Guides
-  </a>
+              <a href="/destinations" className="hover:text-white">
+                Destinations
+              </a>
 
-  <a href="/build-my-trip" className="hover:text-white">
-    Build My Trip
-  </a>
+              <a href="/guides" className="hover:text-white">
+                Travel Guides
+              </a>
 
-  <a href="/bespoke" className="hover:text-white">
-    Bespoke
-  </a>
+              <a href="/build-my-trip" className="hover:text-white">
+                Build My Trip
+              </a>
 
-  <a href="/about" className="hover:text-white">
-    About
-  </a>
+              <a href="/bespoke" className="hover:text-white">
+                Bespoke
+              </a>
 
-  <a href="/contact" className="hover:text-white">
-    Contact
-  </a>
+              <a href="/about" className="hover:text-white">
+                About
+              </a>
 
-  <a href="/privacy" className="hover:text-white">
-    Privacy Policy
-  </a>
+              <a href="/contact" className="hover:text-white">
+                Contact
+              </a>
 
-  <a href="/terms" className="hover:text-white">
-    Terms & Conditions
-  </a>
+              <a href="/privacy" className="hover:text-white">
+                Privacy Policy
+              </a>
 
-  <a href="/refunds" className="hover:text-white">
-    Refund Policy
-  </a>
-</div>
+              <a href="/terms" className="hover:text-white">
+                Terms & Conditions
+              </a>
+
+              <a href="/refunds" className="hover:text-white">
+                Refund Policy
+              </a>
+
+            </div>
 
           </div>
 
