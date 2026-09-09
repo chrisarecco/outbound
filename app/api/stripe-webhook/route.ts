@@ -4,13 +4,14 @@ import { Resend } from "resend";
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 const resend = new Resend(process.env.RESEND_API_KEY!);
 
+// LIVE Stripe Price IDs
 const GUIDE_PRICES: Record<string, string> = {
-  thailand: "price_1UDmP1LEJD8lGtcNdQxBTRWi",
-  vietnam: "price_1UDmRRLEJD8lGtcNcXQgW87A",
-  indonesia: "price_1UDmSJLEJD8lGtcNVvwRzzLJ",
-  japan: "price_1UDmT7LEJD8lGtcNgiAhhgb8",
-  philippines: "price_1UDmU5LEJD8lGtcNbQ0qPSjD",
-  australia: "price_1UDmUtLEJD8lGtcNLVOs51qc",
+  thailand: "price_1UDrumLIPTWCzqpTtBQG5boq",
+  vietnam: "price_1UDrv9LIPTWCzqpTZ1Iem3zT",
+  indonesia: "price_1UDrvTLIPTWCzqpTo55jIxjg",
+  japan: "price_1UDrvoLIPTWCzqpT0x2vNbYm",
+  philippines: "price_1UDrw3LIPTWCzqpTruwX5ayv",
+  australia: "price_1UDrwKLIPTWCzqpTMBpQ3p0S",
 };
 
 const GUIDE_NAMES: Record<string, string> = {
@@ -57,6 +58,7 @@ export async function POST(req: Request) {
     });
   }
 
+  // We only care about completed Checkout payments.
   if (event.type !== "checkout.session.completed") {
     return new Response("Event received", {
       status: 200,
@@ -65,7 +67,6 @@ export async function POST(req: Request) {
 
   try {
     const session = event.data.object as Stripe.Checkout.Session;
-
     const metadata = session.metadata || {};
 
     console.log("=================================");
@@ -76,19 +77,30 @@ export async function POST(req: Request) {
 
     /*
      * ============================================================
-     * DETECT WHETHER THIS IS A TRAVEL GUIDE PURCHASE
+     * TRAVEL GUIDE PURCHASE
      * ============================================================
      */
 
     let purchasedGuide = "";
 
+    // New checkout route
     if (metadata.product_type === "travel_guide") {
       purchasedGuide = metadata.guide?.toLowerCase() || "";
     }
 
+    // Also support the guide metadata from the new checkout route
+    if (!purchasedGuide && metadata.guide) {
+      const possibleGuide = metadata.guide.toLowerCase();
+
+      if (GUIDE_PRICES[possibleGuide]) {
+        purchasedGuide = possibleGuide;
+      }
+    }
+
     /*
-     * Also check the actual Stripe price.
-     * This protects us if metadata is missing.
+     * Also check the actual Stripe Price.
+     *
+     * This gives us a fallback if metadata is missing.
      */
 
     if (!purchasedGuide) {
@@ -118,7 +130,7 @@ export async function POST(req: Request) {
 
     /*
      * ============================================================
-     * TRAVEL GUIDE PURCHASE
+     * DELIVER TRAVEL GUIDE
      * ============================================================
      */
 
@@ -128,13 +140,12 @@ export async function POST(req: Request) {
 
       const customerEmail =
         session.customer_details?.email ||
+        metadata.customerEmail ||
         metadata.email ||
         "";
 
       if (!customerEmail) {
-        console.error(
-          "Guide purchase has no customer email."
-        );
+        console.error("Guide purchase has no customer email.");
 
         return new Response("Missing customer email", {
           status: 400,
@@ -253,12 +264,8 @@ export async function POST(req: Request) {
 
     /*
      * ============================================================
-     * PERSONALISED TRIP
+     * PERSONALISED TRIP — £39.99
      * ============================================================
-     *
-     * IMPORTANT:
-     * We only enter this section if this actually looks like
-     * a personalised trip purchase.
      */
 
     const isPersonalisedTrip =
@@ -307,53 +314,53 @@ export async function POST(req: Request) {
 
         <h2>Trip details</h2>
 
-        <p><strong>Destination:</strong> ${
-          metadata.destination || "Not specified"
-        }</p>
+        <p><strong>Destination:</strong>
+          ${metadata.destination || "Not specified"}
+        </p>
 
-        <p><strong>Unsure destination:</strong> ${
-          metadata.unsureDestination || "No"
-        }</p>
+        <p><strong>Unsure destination:</strong>
+          ${metadata.unsureDestination || "No"}
+        </p>
 
-        <p><strong>Dates:</strong> ${
-          metadata.dates || "Not specified"
-        }</p>
+        <p><strong>Dates:</strong>
+          ${metadata.dates || "Not specified"}
+        </p>
 
-        <p><strong>Duration:</strong> ${
-          metadata.duration || "Not specified"
-        }</p>
+        <p><strong>Duration:</strong>
+          ${metadata.duration || "Not specified"}
+        </p>
 
-        <p><strong>Travellers:</strong> ${
-          metadata.travellers || "Not specified"
-        }</p>
+        <p><strong>Travellers:</strong>
+          ${metadata.travellers || "Not specified"}
+        </p>
 
-        <p><strong>Traveller count:</strong> ${
-          metadata.travellerCount || "Not specified"
-        }</p>
+        <p><strong>Traveller count:</strong>
+          ${metadata.travellerCount || "Not specified"}
+        </p>
 
-        <p><strong>Budget:</strong> ${
-          metadata.budget || "Not specified"
-        }</p>
+        <p><strong>Budget:</strong>
+          ${metadata.budget || "Not specified"}
+        </p>
 
-        <p><strong>Flights included:</strong> ${
-          metadata.flightsIncluded || "Not specified"
-        }</p>
+        <p><strong>Flights included:</strong>
+          ${metadata.flightsIncluded || "Not specified"}
+        </p>
 
-        <p><strong>Interests:</strong> ${
-          metadata.interests || "Not specified"
-        }</p>
+        <p><strong>Interests:</strong>
+          ${metadata.interests || "Not specified"}
+        </p>
 
-        <p><strong>Other interests:</strong> ${
-          metadata.otherInterests || "None"
-        }</p>
+        <p><strong>Other interests:</strong>
+          ${metadata.otherInterests || "None"}
+        </p>
 
-        <p><strong>Travel style:</strong> ${
-          metadata.travelStyle || "Not specified"
-        }</p>
+        <p><strong>Travel style:</strong>
+          ${metadata.travelStyle || "Not specified"}
+        </p>
 
-        <p><strong>Pace:</strong> ${
-          metadata.pace || "Not specified"
-        }</p>
+        <p><strong>Pace:</strong>
+          ${metadata.pace || "Not specified"}
+        </p>
 
         <p><strong>Additional trip details:</strong></p>
 
@@ -370,6 +377,10 @@ export async function POST(req: Request) {
       </div>
     `;
 
+    /*
+     * Email you when a personalised trip has been paid for.
+     */
+
     await resend.emails.send({
       from: "OUTBOUND <trips@outbound-travel.com>",
       to: process.env.OUTBOUND_EMAIL!,
@@ -378,6 +389,10 @@ export async function POST(req: Request) {
       }`,
       html: tripSummary,
     });
+
+    /*
+     * Confirmation email to customer.
+     */
 
     await resend.emails.send({
       from: "OUTBOUND <trips@outbound-travel.com>",
@@ -413,21 +428,28 @@ export async function POST(req: Request) {
             </p>
 
             <div style="margin-top: 30px; padding: 20px; background: #ffffff; border-radius: 16px;">
+
               <strong>Destination:</strong><br />
               ${metadata.destination || "We'll confirm this with you"}
+
               <br /><br />
 
               <strong>Delivery:</strong><br />
               Your personalised itinerary will be prepared within 48 hours.
+
             </div>
 
           </div>
 
           <div style="padding: 30px 0; font-size: 13px; line-height: 1.6; color: #888888;">
+
             If you have any questions, reply to this email and we'll help you out.
+
             <br /><br />
+
             OUTBOUND.<br />
             Travel planning, rethought.
+
           </div>
 
         </div>
@@ -441,6 +463,7 @@ export async function POST(req: Request) {
     return new Response("Trip processed", {
       status: 200,
     });
+
   } catch (error) {
     console.error(
       "Stripe webhook processing error:",

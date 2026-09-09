@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import SiteHeader from "@/components/SiteHeader";
 
 const interests = [
   "Beaches",
@@ -16,26 +17,89 @@ const interests = [
   "Wellness",
 ];
 
+const durations = [
+  "Under 7 days",
+  "7–14 days",
+  "2–4 weeks",
+  "1 month+",
+];
+
+const travellerTypes = [
+  "Solo",
+  "Couple",
+  "Friends",
+  "Family",
+];
+
+const budgets = [
+  "Under £750",
+  "£750–£1,500",
+  "£1,500–£2,500",
+  "£2,500–£5,000",
+  "£5,000+",
+];
+
+const travelStyles = [
+  {
+    title: "Backpacker",
+    description: "Social, flexible and value-focused.",
+  },
+  {
+    title: "Mid-range",
+    description: "Comfortable without overspending.",
+  },
+  {
+    title: "Luxury",
+    description: "Premium stays, experiences and comfort.",
+  },
+];
+
+const paces = [
+  {
+    title: "Slow & relaxed",
+    description: "Fewer places, more time in each.",
+  },
+  {
+    title: "Balanced",
+    description: "A mix of seeing things and downtime.",
+  },
+  {
+    title: "See as much as possible",
+    description: "Maximum experiences and destinations.",
+  },
+];
+
 export default function BuildMyTrip() {
   const [step, setStep] = useState(1);
-  const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const [destination, setDestination] = useState("");
   const [unsureDestination, setUnsureDestination] = useState(false);
+
   const [dates, setDates] = useState("");
   const [duration, setDuration] = useState("");
+
   const [travellers, setTravellers] = useState("");
   const [travellerCount, setTravellerCount] = useState("");
+
   const [budget, setBudget] = useState("");
   const [flightsIncluded, setFlightsIncluded] = useState("");
-  const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
+
+  const [selectedInterests, setSelectedInterests] = useState<string[]>(
+    []
+  );
   const [otherInterests, setOtherInterests] = useState("");
+
   const [travelStyle, setTravelStyle] = useState("");
   const [pace, setPace] = useState("");
+
   const [tripDetails, setTripDetails] = useState("");
+
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+
+  const totalSteps = 7;
 
   const toggleInterest = (interest: string) => {
     setSelectedInterests((current) =>
@@ -74,10 +138,6 @@ export default function BuildMyTrip() {
     }
 
     if (step === 7) {
-      return tripDetails.trim() !== "";
-    }
-
-    if (step === 8) {
       return (
         name.trim() !== "" &&
         email.trim() !== "" &&
@@ -89,131 +149,760 @@ export default function BuildMyTrip() {
   };
 
   const nextStep = () => {
-    if (step < 8 && canContinue()) {
+    if (!canContinue()) return;
+
+    setError("");
+
+    if (step < totalSteps) {
       setStep((current) => current + 1);
-      window.scrollTo({ top: 0, behavior: "smooth" });
     }
   };
 
   const previousStep = () => {
+    setError("");
+
     if (step > 1) {
       setStep((current) => current - 1);
-      window.scrollTo({ top: 0, behavior: "smooth" });
     }
   };
 
   const submitTrip = async () => {
-  if (!canContinue()) return;
+    if (!canContinue()) return;
 
-  setLoading(true);
+    setLoading(true);
+    setError("");
 
-  try {
-    const response = await fetch("/api/create-checkout-session", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        tripData: {
-          destination,
-          unsureDestination,
-          dates,
-          duration,
-          travellers,
-          travellerCount,
-          budget,
-          flightsIncluded,
-          selectedInterests,
-          otherInterests,
-          travelStyle,
-          pace,
-          tripDetails,
-          name,
-          email,
+    try {
+      const response = await fetch("/api/create-checkout-session", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
         },
-      }),
-    });
+        body: JSON.stringify({
+          tripData: {
+            destination,
+            unsureDestination,
+            dates,
+            duration,
+            travellers,
+            travellerCount,
+            budget,
+            flightsIncluded,
+            selectedInterests,
+            otherInterests,
+            travelStyle,
+            pace,
+            tripDetails,
+            name,
+            email,
+          },
+        }),
+      });
 
-    const data = await response.json();
+      const data = await response.json();
 
-    if (!response.ok || !data.url) {
-      throw new Error(data.error || "Unable to start checkout.");
+      if (!response.ok || !data.url) {
+        throw new Error(
+          data.error || "Unable to start checkout."
+        );
+      }
+
+      window.location.href = data.url;
+    } catch (err) {
+      console.error("Checkout error:", err);
+
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Something went wrong. Please try again."
+      );
+
+      setLoading(false);
     }
+  };
 
-    window.location.href = data.url;
-  } catch (error) {
-    console.error("Checkout error:", error);
-    alert("Something went wrong starting payment. Please try again.");
-    setLoading(false);
-  }
-};
+  const progress = (step / totalSteps) * 100;
 
-  if (submitted) {
-    return (
-      <main className="min-h-screen bg-[#f5f3ee] text-black">
+  return (
+    <main className="min-h-screen bg-[#f5f3ee] text-black">
 
-        <header className="flex items-center justify-between px-6 py-6 md:px-10">
-          <Link
-            href="/"
-            className="text-2xl font-black tracking-[-0.08em] md:text-3xl"
-          >
-            OUTBOUND.
-          </Link>
+      {/* HEADER */}
+      <div className="relative z-50 h-[82px] shrink-0 bg-[#f5f3ee] sm:h-[92px]">
+        <SiteHeader />
+      </div>
 
-          <Link
-            href="/destinations"
-            className="text-sm font-semibold hover:opacity-50"
-          >
-            Explore destinations →
-          </Link>
-        </header>
+      {/* FORM */}
+      <section className="mx-auto max-w-5xl px-6 pb-20 pt-8 md:px-10 md:pt-12">
 
-        <section className="mx-auto max-w-5xl px-6 pb-20 pt-12 md:px-10 md:pb-28 md:pt-20">
+        {/* FORM HEADER */}
 
-          <div className="max-w-4xl">
+        <div className="mb-10 flex items-end justify-between gap-6 border-b border-black/10 pb-6">
 
-            <p className="mb-5 text-sm font-bold uppercase tracking-[0.2em]">
-              Trip brief complete
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-black/40 sm:text-xs">
+              OUTBOUND. PERSONAL TRIP PLANNING
             </p>
 
-            <h1 className="text-6xl font-black leading-[0.9] tracking-[-0.06em] md:text-8xl">
-              YOUR TRIP.
-              <span className="block text-black/25">
-                BUILT AROUND YOU.
-              </span>
+            <h1 className="mt-3 text-3xl font-black tracking-[-0.05em] sm:text-4xl">
+              Build my trip
             </h1>
-
-            <p className="mt-8 max-w-2xl text-xl leading-relaxed text-black/60">
-              We&apos;ve got everything we need to build a personalised
-              travel plan around your dates, budget, style and priorities.
-            </p>
-
           </div>
 
-          <div className="mt-12 grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+          <div className="shrink-0 text-right">
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-black/35">
+              Step
+            </p>
 
-            <div className="rounded-3xl bg-white p-7 md:p-10">
+            <p className="mt-1 text-lg font-black">
+              {step} <span className="text-black/20">/</span>{" "}
+              {totalSteps}
+            </p>
+          </div>
 
-              <p className="text-xs font-bold uppercase tracking-[0.2em] text-black/40">
-                OUTBOUND Personalised Trip
+        </div>
+
+        {/* PROGRESS */}
+
+        <div className="mb-14">
+
+          <div className="h-1 rounded-full bg-black/10">
+            <div
+              className="h-1 rounded-full bg-black transition-all duration-300"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+
+          <div className="mt-3 flex justify-between text-[10px] font-bold uppercase tracking-[0.15em] text-black/30">
+            <span>Brief</span>
+            <span>Preferences</span>
+            <span>Payment</span>
+          </div>
+
+        </div>
+
+        {/* STEP 1 */}
+
+        {step === 1 && (
+          <div>
+
+            <p className="mb-4 text-[10px] font-bold uppercase tracking-[0.22em] text-black/40 sm:text-xs">
+              01 — Destination
+            </p>
+
+            <h2 className="max-w-4xl text-4xl font-black leading-[0.92] tracking-[-0.055em] sm:text-5xl md:text-6xl">
+              Where do you want to go?
+            </h2>
+
+            <p className="mt-5 max-w-xl text-base leading-relaxed text-black/50">
+              Already know where you're going? Tell us.
+              Not sure yet? We can work from the type of trip
+              you're looking for.
+            </p>
+
+            <div className="mt-10">
+
+              <input
+                type="text"
+                value={destination}
+                disabled={unsureDestination}
+                onChange={(event) =>
+                  setDestination(event.target.value)
+                }
+                placeholder="e.g. Thailand, Japan, Italy..."
+                className="w-full border-b-2 border-black bg-transparent py-5 text-2xl font-medium outline-none placeholder:text-black/20 disabled:opacity-25 sm:text-3xl"
+              />
+
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                const next = !unsureDestination;
+
+                setUnsureDestination(next);
+
+                if (next) {
+                  setDestination("");
+                }
+              }}
+              className={`mt-7 rounded-full border-2 px-6 py-3.5 text-sm font-bold transition ${
+                unsureDestination
+                  ? "border-black bg-black text-white"
+                  : "border-black/15 bg-white hover:border-black"
+              }`}
+            >
+              {unsureDestination
+                ? "✓ Help me choose"
+                : "I'm not sure yet"}
+            </button>
+
+            {unsureDestination && (
+              <div className="mt-7 rounded-2xl bg-white p-6">
+
+                <p className="font-bold">
+                  No problem.
+                </p>
+
+                <p className="mt-2 max-w-xl text-sm leading-relaxed text-black/50">
+                  We'll use your budget, interests, dates and
+                  travel style to help shape the destination and
+                  route.
+                </p>
+
+              </div>
+            )}
+
+          </div>
+        )}
+
+        {/* STEP 2 */}
+
+        {step === 2 && (
+          <div>
+
+            <p className="mb-4 text-[10px] font-bold uppercase tracking-[0.22em] text-black/40 sm:text-xs">
+              02 — Timing
+            </p>
+
+            <h2 className="max-w-4xl text-4xl font-black leading-[0.92] tracking-[-0.055em] sm:text-5xl md:text-6xl">
+              When are you going?
+            </h2>
+
+            <p className="mt-5 max-w-xl text-base leading-relaxed text-black/50">
+              Exact dates are ideal, but approximate dates are
+              completely fine.
+            </p>
+
+            <input
+              type="text"
+              value={dates}
+              onChange={(event) =>
+                setDates(event.target.value)
+              }
+              placeholder="e.g. 10–24 June 2027"
+              className="mt-10 w-full border-b-2 border-black bg-transparent py-5 text-2xl font-medium outline-none placeholder:text-black/20 sm:text-3xl"
+            />
+
+            <div className="mt-12">
+
+              <p className="mb-5 text-[10px] font-bold uppercase tracking-[0.2em] text-black/40">
+                How long have you got?
               </p>
 
-              <div className="mt-4 flex items-end gap-3">
-                <p className="text-5xl font-black tracking-[-0.05em]">
-                  £39.99
-                </p>
+              <div className="grid gap-3 sm:grid-cols-2">
 
-                <p className="pb-1 text-sm text-black/45">
-                  one-off
-                </p>
+                {durations.map((option) => (
+                  <button
+                    key={option}
+                    type="button"
+                    onClick={() => setDuration(option)}
+                    className={`rounded-2xl border-2 p-6 text-left font-bold transition ${
+                      duration === option
+                        ? "border-black bg-black text-white"
+                        : "border-black/10 bg-white hover:border-black"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+
+                      <span>{option}</span>
+
+                      {duration === option && (
+                        <span>✓</span>
+                      )}
+
+                    </div>
+                  </button>
+                ))}
+
               </div>
 
-              <p className="mt-6 max-w-xl text-lg leading-relaxed text-black/60">
-                A complete trip plan built around the information
-                you&apos;ve just given us.
+            </div>
+
+          </div>
+        )}
+
+        {/* STEP 3 */}
+
+        {step === 3 && (
+          <div>
+
+            <p className="mb-4 text-[10px] font-bold uppercase tracking-[0.22em] text-black/40 sm:text-xs">
+              03 — Travellers
+            </p>
+
+            <h2 className="max-w-4xl text-4xl font-black leading-[0.92] tracking-[-0.055em] sm:text-5xl md:text-6xl">
+              Who's coming?
+            </h2>
+
+            <p className="mt-5 max-w-xl text-base leading-relaxed text-black/50">
+              This helps us recommend the right accommodation,
+              activities and pace.
+            </p>
+
+            <div className="mt-10 grid gap-3 sm:grid-cols-2">
+
+              {travellerTypes.map((option) => (
+                <button
+                  key={option}
+                  type="button"
+                  onClick={() => setTravellers(option)}
+                  className={`rounded-2xl border-2 p-6 text-left transition ${
+                    travellers === option
+                      ? "border-black bg-black text-white"
+                      : "border-black/10 bg-white hover:border-black"
+                  }`}
+                >
+
+                  <div className="flex items-center justify-between">
+
+                    <span className="text-xl font-black">
+                      {option}
+                    </span>
+
+                    {travellers === option && (
+                      <span>✓</span>
+                    )}
+
+                  </div>
+
+                </button>
+              ))}
+
+            </div>
+
+            <div className="mt-8 max-w-sm">
+
+              <label className="mb-3 block text-[10px] font-bold uppercase tracking-[0.2em] text-black/40">
+                Number of travellers
+              </label>
+
+              <input
+                type="number"
+                min="1"
+                max="50"
+                value={travellerCount}
+                onChange={(event) =>
+                  setTravellerCount(event.target.value)
+                }
+                placeholder="e.g. 2"
+                className="w-full rounded-2xl border-2 border-black/10 bg-white p-5 text-xl outline-none focus:border-black"
+              />
+
+            </div>
+
+          </div>
+        )}
+
+        {/* STEP 4 */}
+
+        {step === 4 && (
+          <div>
+
+            <p className="mb-4 text-[10px] font-bold uppercase tracking-[0.22em] text-black/40 sm:text-xs">
+              04 — Budget
+            </p>
+
+            <h2 className="max-w-4xl text-4xl font-black leading-[0.92] tracking-[-0.055em] sm:text-5xl md:text-6xl">
+              What's your trip budget?
+            </h2>
+
+            <p className="mt-5 max-w-xl text-base leading-relaxed text-black/50">
+              Give us a rough total budget so we can make
+              recommendations that are actually realistic.
+            </p>
+
+            <div className="mt-10 grid gap-3 sm:grid-cols-2">
+
+              {budgets.map((option) => (
+                <button
+                  key={option}
+                  type="button"
+                  onClick={() => setBudget(option)}
+                  className={`rounded-2xl border-2 p-6 text-left font-bold transition ${
+                    budget === option
+                      ? "border-black bg-black text-white"
+                      : "border-black/10 bg-white hover:border-black"
+                  }`}
+                >
+
+                  <div className="flex items-center justify-between">
+
+                    <span>{option}</span>
+
+                    {budget === option && (
+                      <span>✓</span>
+                    )}
+
+                  </div>
+
+                </button>
+              ))}
+
+            </div>
+
+            <div className="mt-12">
+
+              <p className="mb-5 text-[10px] font-bold uppercase tracking-[0.2em] text-black/40">
+                Does that budget include flights?
               </p>
 
-              <div className="mt-8 grid gap-3 sm:grid-cols-2">
+              <div className="grid gap-3 sm:grid-cols-2">
+
+                {["Yes", "No"].map((option) => (
+                  <button
+                    key={option}
+                    type="button"
+                    onClick={() =>
+                      setFlightsIncluded(option)
+                    }
+                    className={`rounded-2xl border-2 p-6 text-left font-bold transition ${
+                      flightsIncluded === option
+                        ? "border-black bg-black text-white"
+                        : "border-black/10 bg-white hover:border-black"
+                    }`}
+                  >
+
+                    <div className="flex items-center justify-between">
+
+                      <span>{option}</span>
+
+                      {flightsIncluded === option && (
+                        <span>✓</span>
+                      )}
+
+                    </div>
+
+                  </button>
+                ))}
+
+              </div>
+
+            </div>
+
+          </div>
+        )}
+
+        {/* STEP 5 */}
+
+        {step === 5 && (
+          <div>
+
+            <p className="mb-4 text-[10px] font-bold uppercase tracking-[0.22em] text-black/40 sm:text-xs">
+              05 — Interests
+            </p>
+
+            <h2 className="max-w-4xl text-4xl font-black leading-[0.92] tracking-[-0.055em] sm:text-5xl md:text-6xl">
+              What are you actually into?
+            </h2>
+
+            <p className="mt-5 max-w-xl text-base leading-relaxed text-black/50">
+              Pick everything that sounds like you. You can
+              choose as many as you want.
+            </p>
+
+            <div className="mt-10 flex flex-wrap gap-3">
+
+              {interests.map((interest) => {
+                const selected =
+                  selectedInterests.includes(interest);
+
+                return (
+                  <button
+                    key={interest}
+                    type="button"
+                    onClick={() =>
+                      toggleInterest(interest)
+                    }
+                    className={`rounded-full border-2 px-5 py-3.5 text-sm font-bold transition sm:px-6 sm:py-4 sm:text-base ${
+                      selected
+                        ? "border-black bg-black text-white"
+                        : "border-black/10 bg-white hover:border-black"
+                    }`}
+                  >
+                    {selected && (
+                      <span className="mr-2">✓</span>
+                    )}
+
+                    {interest}
+                  </button>
+                );
+              })}
+
+            </div>
+
+            <div className="mt-10">
+
+              <label className="mb-3 block text-[10px] font-bold uppercase tracking-[0.2em] text-black/40">
+                Anything else?
+              </label>
+
+              <textarea
+                value={otherInterests}
+                onChange={(event) =>
+                  setOtherInterests(event.target.value)
+                }
+                placeholder="e.g. scuba diving, surfing, local food, photography..."
+                rows={4}
+                className="w-full resize-none rounded-2xl border-2 border-black/10 bg-white p-5 text-base leading-relaxed outline-none focus:border-black"
+              />
+
+            </div>
+
+          </div>
+        )}
+
+        {/* STEP 6 */}
+
+        {step === 6 && (
+          <div>
+
+            <p className="mb-4 text-[10px] font-bold uppercase tracking-[0.22em] text-black/40 sm:text-xs">
+              06 — Travel style
+            </p>
+
+            <h2 className="max-w-4xl text-4xl font-black leading-[0.92] tracking-[-0.055em] sm:text-5xl md:text-6xl">
+              How should the trip feel?
+            </h2>
+
+            <p className="mt-5 max-w-xl text-base leading-relaxed text-black/50">
+              We want to build the trip you'd actually enjoy,
+              not a generic itinerary.
+            </p>
+
+            <div className="mt-10">
+
+              <p className="mb-5 text-[10px] font-bold uppercase tracking-[0.2em] text-black/40">
+                Your travel style
+              </p>
+
+              <div className="grid gap-3">
+
+                {travelStyles.map((style) => (
+                  <button
+                    key={style.title}
+                    type="button"
+                    onClick={() =>
+                      setTravelStyle(style.title)
+                    }
+                    className={`rounded-2xl border-2 p-6 text-left transition ${
+                      travelStyle === style.title
+                        ? "border-black bg-black text-white"
+                        : "border-black/10 bg-white hover:border-black"
+                    }`}
+                  >
+
+                    <div className="flex items-start justify-between gap-5">
+
+                      <div>
+
+                        <h3 className="text-lg font-black">
+                          {style.title}
+                        </h3>
+
+                        <p
+                          className={`mt-2 text-sm leading-relaxed ${
+                            travelStyle === style.title
+                              ? "text-white/55"
+                              : "text-black/45"
+                          }`}
+                        >
+                          {style.description}
+                        </p>
+
+                      </div>
+
+                      {travelStyle === style.title && (
+                        <span>✓</span>
+                      )}
+
+                    </div>
+
+                  </button>
+                ))}
+
+              </div>
+
+            </div>
+
+            <div className="mt-12">
+
+              <p className="mb-5 text-[10px] font-bold uppercase tracking-[0.2em] text-black/40">
+                Your ideal pace
+              </p>
+
+              <div className="grid gap-3">
+
+                {paces.map((option) => (
+                  <button
+                    key={option.title}
+                    type="button"
+                    onClick={() =>
+                      setPace(option.title)
+                    }
+                    className={`rounded-2xl border-2 p-6 text-left transition ${
+                      pace === option.title
+                        ? "border-black bg-black text-white"
+                        : "border-black/10 bg-white hover:border-black"
+                    }`}
+                  >
+
+                    <div className="flex items-start justify-between gap-5">
+
+                      <div>
+
+                        <h3 className="text-lg font-black">
+                          {option.title}
+                        </h3>
+
+                        <p
+                          className={`mt-2 text-sm leading-relaxed ${
+                            pace === option.title
+                              ? "text-white/55"
+                              : "text-black/45"
+                          }`}
+                        >
+                          {option.description}
+                        </p>
+
+                      </div>
+
+                      {pace === option.title && (
+                        <span>✓</span>
+                      )}
+
+                    </div>
+
+                  </button>
+                ))}
+
+              </div>
+
+            </div>
+
+          </div>
+        )}
+
+        {/* STEP 7 */}
+
+        {step === 7 && (
+          <div>
+
+            <p className="mb-4 text-[10px] font-bold uppercase tracking-[0.22em] text-black/40 sm:text-xs">
+              07 — Final details
+            </p>
+
+            <h2 className="max-w-4xl text-4xl font-black leading-[0.92] tracking-[-0.055em] sm:text-5xl md:text-6xl">
+              Tell us anything else.
+            </h2>
+
+            <p className="mt-5 max-w-2xl text-base leading-relaxed text-black/50 sm:text-lg">
+              This is where you can give us the details that make
+              your trip different. Must-do experiences, places
+              you've already found, things you don't want, special
+              occasions or anything else we should know.
+            </p>
+
+            <textarea
+              value={tripDetails}
+              onChange={(event) =>
+                setTripDetails(event.target.value)
+              }
+              placeholder="Tell us everything..."
+              rows={7}
+              className="mt-10 w-full resize-none rounded-2xl border-2 border-black/10 bg-white p-6 text-base leading-relaxed outline-none focus:border-black sm:text-lg"
+            />
+
+            {/* CONTACT */}
+
+            <div className="mt-12">
+
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-black/40">
+                Your details
+              </p>
+
+              <div className="mt-5 grid gap-4 sm:grid-cols-2">
+
+                <div>
+
+                  <label
+                    htmlFor="name"
+                    className="mb-2 block text-sm font-bold"
+                  >
+                    Your name
+                  </label>
+
+                  <input
+                    id="name"
+                    type="text"
+                    value={name}
+                    onChange={(event) =>
+                      setName(event.target.value)
+                    }
+                    placeholder="Your name"
+                    className="w-full rounded-2xl border-2 border-black/10 bg-white p-5 text-base outline-none focus:border-black"
+                  />
+
+                </div>
+
+                <div>
+
+                  <label
+                    htmlFor="email"
+                    className="mb-2 block text-sm font-bold"
+                  >
+                    Email address
+                  </label>
+
+                  <input
+                    id="email"
+                    type="email"
+                    value={email}
+                    onChange={(event) =>
+                      setEmail(event.target.value)
+                    }
+                    placeholder="you@example.com"
+                    className="w-full rounded-2xl border-2 border-black/10 bg-white p-5 text-base outline-none focus:border-black"
+                  />
+
+                </div>
+
+              </div>
+
+            </div>
+
+            {/* PRODUCT SUMMARY */}
+
+            <div className="mt-12 rounded-[2rem] bg-black p-7 text-white sm:p-9">
+
+              <div className="flex flex-col justify-between gap-6 sm:flex-row sm:items-end">
+
+                <div>
+
+                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/35">
+                    OUTBOUND. PERSONAL TRIP
+                  </p>
+
+                  <h3 className="mt-3 text-3xl font-black tracking-[-0.04em]">
+                    Your trip, figured out.
+                  </h3>
+
+                </div>
+
+                <div className="sm:text-right">
+
+                  <p className="text-5xl font-black tracking-[-0.06em]">
+                    £39.99
+                  </p>
+
+                  <p className="mt-1 text-xs text-white/35">
+                    One-off payment
+                  </p>
+
+                </div>
+
+              </div>
+
+              <div className="mt-7 grid gap-2 sm:grid-cols-2">
 
                 {[
                   "Personalised route",
@@ -229,603 +918,244 @@ export default function BuildMyTrip() {
                 ].map((item) => (
                   <div
                     key={item}
-                    className="flex items-center gap-3 rounded-2xl bg-[#f5f3ee] px-4 py-4"
+                    className="flex items-center gap-3 rounded-xl bg-white/10 px-4 py-3"
                   >
-                    <span className="font-black">
+
+                    <span className="text-sm font-black text-white/70">
                       ✓
                     </span>
 
-                    <span className="text-sm font-bold">
+                    <span className="text-sm font-medium text-white/70">
                       {item}
                     </span>
+
                   </div>
                 ))}
 
               </div>
 
-              <button
-                onClick={() =>
-                  alert(
-                    "Stripe checkout will be connected here next."
-                  )
-                }
-                className="mt-8 w-full rounded-full bg-black px-8 py-5 text-sm font-bold text-white transition hover:bg-black/75"
-              >
-                Continue to payment →
-              </button>
+              <div className="mt-7 border-t border-white/10 pt-6">
 
-              <p className="mt-4 text-center text-xs leading-relaxed text-black/40">
-                Secure payment via Stripe. We won&apos;t start building
-                your personalised trip until payment is complete.
-              </p>
-
-            </div>
-
-            <div className="rounded-3xl bg-black p-7 text-white md:p-10">
-
-              <p className="text-xs font-bold uppercase tracking-[0.2em] text-white/40">
-                What happens next
-              </p>
-
-              <div className="mt-8 space-y-8">
-
-                <div>
-                  <p className="text-xs font-black text-white/35">
-                    01
-                  </p>
-
-                  <h3 className="mt-2 text-xl font-black">
-                    Complete payment
-                  </h3>
-
-                  <p className="mt-2 text-sm leading-relaxed text-white/55">
-                    Secure your personalised trip plan for £39.99.
-                  </p>
-                </div>
-
-                <div>
-                  <p className="text-xs font-black text-white/35">
-                    02
-                  </p>
-
-                  <h3 className="mt-2 text-xl font-black">
-                    We build your trip
-                  </h3>
-
-                  <p className="mt-2 text-sm leading-relaxed text-white/55">
-                    We use your brief to create your route,
-                    itinerary, recommendations and map.
-                  </p>
-                </div>
-
-                <div>
-                  <p className="text-xs font-black text-white/35">
-                    03
-                  </p>
-
-                  <h3 className="mt-2 text-xl font-black">
-                    Your plan is delivered
-                  </h3>
-
-                  <p className="mt-2 text-sm leading-relaxed text-white/55">
-                    You receive your complete OUTBOUND trip plan by
-                    email.
-                  </p>
-                </div>
+                <p className="text-sm leading-relaxed text-white/45">
+                  Once payment is complete, we'll use your brief
+                  to build your personalised trip.
+                </p>
 
               </div>
 
             </div>
 
           </div>
-
-          <p className="mt-8 text-sm text-black/45">
-            Your trip brief is ready. Payment is required before we
-            begin building your personalised plan.
-          </p>
-
-        </section>
-      </main>
-    );
-  }
-
-  return (
-    <main className="min-h-screen bg-[#f5f3ee] text-black">
-
-      <header className="flex items-center justify-between px-6 py-6 md:px-10">
-
-        <Link
-          href="/"
-          className="text-2xl font-black tracking-[-0.08em] md:text-3xl"
-        >
-          OUTBOUND.
-        </Link>
-
-        <Link
-          href="/destinations"
-          className="text-sm font-semibold hover:opacity-50"
-        >
-          Explore destinations →
-        </Link>
-
-      </header>
-
-      <section className="mx-auto max-w-4xl px-6 pb-20 pt-8 md:px-10 md:pb-28 md:pt-16">
-
-        <div className="mb-12">
-
-          <div className="mb-3 flex items-center justify-between text-xs font-bold uppercase tracking-[0.18em]">
-            <span>
-              Build my trip
-            </span>
-
-            <span>
-              Step {step} of 8
-            </span>
-          </div>
-
-          <div className="h-1 w-full rounded-full bg-black/10">
-
-            <div
-              className="h-1 rounded-full bg-black transition-all duration-300"
-              style={{
-                width: `${(step / 8) * 100}%`,
-              }}
-            />
-
-          </div>
-
-        </div>
-
-        {/* STEP 1 */}
-
-        {step === 1 && (
-          <div>
-
-            <p className="mb-4 text-sm font-bold uppercase tracking-[0.2em]">
-              Destination
-            </p>
-
-            <h1 className="mb-8 max-w-3xl text-5xl font-black tracking-[-0.05em] md:text-7xl">
-              Where are you thinking about going?
-            </h1>
-
-            <input
-              type="text"
-              value={destination}
-              disabled={unsureDestination}
-              onChange={(e) => setDestination(e.target.value)}
-              placeholder="e.g. Vietnam, Thailand, Australia..."
-              className="w-full border-b-2 border-black bg-transparent py-5 text-2xl outline-none placeholder:text-black/25 disabled:opacity-30 md:text-4xl"
-            />
-
-            <button
-              onClick={() => {
-                const next = !unsureDestination;
-
-                setUnsureDestination(next);
-
-                if (next) {
-                  setDestination("");
-                }
-              }}
-              className={`mt-6 rounded-full border-2 px-6 py-3 text-sm font-bold transition ${
-                unsureDestination
-                  ? "border-black bg-black text-white"
-                  : "border-black/15 bg-white hover:border-black"
-              }`}
-            >
-              I&apos;m not sure yet
-            </button>
-
-          </div>
         )}
 
-        {/* STEP 2 */}
+        {/* ERROR */}
 
-        {step === 2 && (
-          <div>
+        {error && (
+          <div className="mt-8 rounded-2xl border border-red-200 bg-red-50 p-5">
 
-            <p className="mb-4 text-sm font-bold uppercase tracking-[0.2em]">
-              Timing
+            <p className="text-sm font-bold text-red-700">
+              Something went wrong
             </p>
 
-            <h1 className="mb-8 max-w-3xl text-5xl font-black tracking-[-0.05em] md:text-7xl">
-              When are you going?
-            </h1>
-
-            <input
-              type="text"
-              value={dates}
-              onChange={(e) => setDates(e.target.value)}
-              placeholder="e.g. 10–20 June 2027"
-              className="w-full border-b-2 border-black bg-transparent py-5 text-2xl outline-none placeholder:text-black/25 md:text-4xl"
-            />
-
-            <p className="mb-3 mt-10 text-sm font-bold uppercase tracking-[0.15em]">
-              How long have you got?
+            <p className="mt-1 text-sm leading-relaxed text-red-600">
+              {error}
             </p>
-
-            <div className="grid gap-4 sm:grid-cols-2">
-
-              {[
-                "Under 7 days",
-                "7–14 days",
-                "2–4 weeks",
-                "1 month+",
-              ].map((option) => (
-                <button
-                  key={option}
-                  onClick={() => setDuration(option)}
-                  className={`rounded-2xl border-2 p-5 text-left font-bold transition ${
-                    duration === option
-                      ? "border-black bg-black text-white"
-                      : "border-black/15 bg-white hover:border-black"
-                  }`}
-                >
-                  {option}
-                </button>
-              ))}
-
-            </div>
-
-          </div>
-        )}
-
-        {/* STEP 3 */}
-
-        {step === 3 && (
-          <div>
-
-            <p className="mb-4 text-sm font-bold uppercase tracking-[0.2em]">
-              Travellers
-            </p>
-
-            <h1 className="mb-8 max-w-3xl text-5xl font-black tracking-[-0.05em] md:text-7xl">
-              Who&apos;s coming?
-            </h1>
-
-            <div className="grid gap-4 sm:grid-cols-2">
-
-              {[
-                "Solo",
-                "Couple",
-                "Friends",
-                "Family",
-              ].map((option) => (
-                <button
-                  key={option}
-                  onClick={() => setTravellers(option)}
-                  className={`rounded-2xl border-2 p-6 text-left text-xl font-bold transition ${
-                    travellers === option
-                      ? "border-black bg-black text-white"
-                      : "border-black/15 bg-white hover:border-black"
-                  }`}
-                >
-                  {option}
-                </button>
-              ))}
-
-            </div>
-
-            <input
-              type="number"
-              min="1"
-              value={travellerCount}
-              onChange={(e) => setTravellerCount(e.target.value)}
-              placeholder="Number of travellers"
-              className="mt-8 w-full rounded-2xl border-2 border-black/10 bg-white p-6 text-xl outline-none focus:border-black"
-            />
-
-          </div>
-        )}
-
-        {/* STEP 4 */}
-
-        {step === 4 && (
-          <div>
-
-            <p className="mb-4 text-sm font-bold uppercase tracking-[0.2em]">
-              Budget
-            </p>
-
-            <h1 className="mb-8 max-w-3xl text-5xl font-black tracking-[-0.05em] md:text-7xl">
-              What&apos;s your trip budget?
-            </h1>
-
-            <div className="grid gap-4 sm:grid-cols-2">
-
-              {[
-                "Under £750",
-                "£750–£1,500",
-                "£1,500–£2,500",
-                "£2,500–£5,000",
-                "£5,000+",
-              ].map((option) => (
-                <button
-                  key={option}
-                  onClick={() => setBudget(option)}
-                  className={`rounded-2xl border-2 p-5 text-left font-bold transition ${
-                    budget === option
-                      ? "border-black bg-black text-white"
-                      : "border-black/15 bg-white hover:border-black"
-                  }`}
-                >
-                  {option}
-                </button>
-              ))}
-
-            </div>
-
-            <p className="mb-3 mt-10 text-sm font-bold uppercase tracking-[0.15em]">
-              Does that include flights?
-            </p>
-
-            <div className="grid gap-4 sm:grid-cols-2">
-
-              {["Yes", "No"].map((option) => (
-                <button
-                  key={option}
-                  onClick={() => setFlightsIncluded(option)}
-                  className={`rounded-2xl border-2 p-5 text-left font-bold transition ${
-                    flightsIncluded === option
-                      ? "border-black bg-black text-white"
-                      : "border-black/15 bg-white hover:border-black"
-                  }`}
-                >
-                  {option}
-                </button>
-              ))}
-
-            </div>
-
-          </div>
-        )}
-
-        {/* STEP 5 */}
-
-        {step === 5 && (
-          <div>
-
-            <p className="mb-4 text-sm font-bold uppercase tracking-[0.2em]">
-              Interests
-            </p>
-
-            <h1 className="mb-3 max-w-3xl text-5xl font-black tracking-[-0.05em] md:text-7xl">
-              What are you into?
-            </h1>
-
-            <p className="mb-8 text-black/45">
-              Pick as many as you like.
-            </p>
-
-            <div className="flex flex-wrap gap-3">
-
-              {interests.map((interest) => (
-                <button
-                  key={interest}
-                  onClick={() => toggleInterest(interest)}
-                  className={`rounded-full border-2 px-6 py-4 text-lg font-bold transition ${
-                    selectedInterests.includes(interest)
-                      ? "border-black bg-black text-white"
-                      : "border-black/15 bg-white hover:border-black"
-                  }`}
-                >
-                  {interest}
-                </button>
-              ))}
-
-            </div>
-
-            <div className="mt-10">
-
-              <label className="mb-3 block text-sm font-bold uppercase tracking-[0.15em]">
-                Other
-              </label>
-
-              <textarea
-                value={otherInterests}
-                onChange={(e) => setOtherInterests(e.target.value)}
-                placeholder="Anything else you're interested in?"
-                rows={4}
-                className="w-full resize-none rounded-2xl border-2 border-black/10 bg-white p-6 text-lg outline-none focus:border-black"
-              />
-
-            </div>
-
-          </div>
-        )}
-
-        {/* STEP 6 */}
-
-        {step === 6 && (
-          <div>
-
-            <p className="mb-4 text-sm font-bold uppercase tracking-[0.2em]">
-              Travel style
-            </p>
-
-            <h1 className="mb-8 max-w-3xl text-5xl font-black tracking-[-0.05em] md:text-7xl">
-              How do you like to travel?
-            </h1>
-
-            <div className="grid gap-4 sm:grid-cols-3">
-
-              {[
-                "Backpacker",
-                "Mid-range",
-                "Luxury",
-              ].map((style) => (
-                <button
-                  key={style}
-                  onClick={() => setTravelStyle(style)}
-                  className={`rounded-2xl border-2 p-5 text-lg font-bold transition ${
-                    travelStyle === style
-                      ? "border-black bg-black text-white"
-                      : "border-black/15 bg-white hover:border-black"
-                  }`}
-                >
-                  {style}
-                </button>
-              ))}
-
-            </div>
-
-            <p className="mb-3 mt-10 text-sm font-bold uppercase tracking-[0.15em]">
-              What pace suits you?
-            </p>
-
-            <div className="grid gap-4 sm:grid-cols-3">
-
-              {[
-                "Slow & relaxed",
-                "Balanced",
-                "See as much as possible",
-              ].map((option) => (
-                <button
-                  key={option}
-                  onClick={() => setPace(option)}
-                  className={`rounded-2xl border-2 p-5 text-left font-bold transition ${
-                    pace === option
-                      ? "border-black bg-black text-white"
-                      : "border-black/15 bg-white hover:border-black"
-                  }`}
-                >
-                  {option}
-                </button>
-              ))}
-
-            </div>
-
-          </div>
-        )}
-
-        {/* STEP 7 */}
-
-        {step === 7 && (
-          <div>
-
-            <p className="mb-4 text-sm font-bold uppercase tracking-[0.2em]">
-              Make it yours
-            </p>
-
-            <h1 className="mb-5 max-w-3xl text-5xl font-black tracking-[-0.05em] md:text-7xl">
-              What would make this trip perfect?
-            </h1>
-
-            <p className="mb-8 max-w-2xl text-lg text-black/50">
-              Tell us about must-do experiences, places you already
-              have in mind, things you want to avoid, or anything
-              else that matters.
-            </p>
-
-            <textarea
-              value={tripDetails}
-              onChange={(e) => setTripDetails(e.target.value)}
-              placeholder="e.g. We want a mix of beaches and nightlife, don't want to move hotels every night, and we'd love to do a diving trip..."
-              rows={7}
-              className="w-full resize-none rounded-2xl border-2 border-black/10 bg-white p-6 text-lg outline-none focus:border-black"
-            />
-
-          </div>
-        )}
-
-        {/* STEP 8 */}
-
-        {step === 8 && (
-          <div>
-
-            <p className="mb-4 text-sm font-bold uppercase tracking-[0.2em]">
-              Your details
-            </p>
-
-            <h1 className="mb-8 max-w-3xl text-5xl font-black tracking-[-0.05em] md:text-7xl">
-              Where should we send your trip?
-            </h1>
-
-            <div className="space-y-5">
-
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Your name"
-                className="w-full rounded-2xl border-2 border-black/10 bg-white p-6 text-xl outline-none focus:border-black"
-              />
-
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="Your email address"
-                className="w-full rounded-2xl border-2 border-black/10 bg-white p-6 text-xl outline-none focus:border-black"
-              />
-
-            </div>
-
-            <div className="mt-7 rounded-2xl bg-white p-6">
-
-              <p className="font-black">
-                Personalised trip planning — £39.99
-              </p>
-
-              <p className="mt-2 text-sm leading-relaxed text-black/50">
-                You&apos;ll review the product and complete secure
-                payment before we begin building your trip.
-              </p>
-
-            </div>
 
           </div>
         )}
 
         {/* NAVIGATION */}
 
-        <div className="mt-12 flex items-center justify-between">
+        <div className="mt-12 flex items-center justify-between border-t border-black/10 pt-8">
 
           <button
+            type="button"
             onClick={previousStep}
-            disabled={step === 1}
-            className={`text-sm font-bold ${
-              step === 1
-                ? "cursor-not-allowed opacity-20"
-                : "hover:opacity-50"
+            disabled={step === 1 || loading}
+            className={`text-sm font-bold transition ${
+              step === 1 || loading
+                ? "cursor-not-allowed text-black/15"
+                : "text-black hover:opacity-50"
             }`}
           >
             ← Back
           </button>
 
-          {step < 8 ? (
+          {step < totalSteps ? (
             <button
+              type="button"
               onClick={nextStep}
               disabled={!canContinue()}
-              className={`rounded-full px-8 py-4 text-sm font-bold text-white transition ${
+              className={`rounded-full px-8 py-4 text-sm font-bold transition ${
                 canContinue()
-                  ? "bg-black hover:bg-black/75"
-                  : "cursor-not-allowed bg-black/20"
+                  ? "bg-black text-white hover:bg-black/75"
+                  : "cursor-not-allowed bg-black/10 text-black/30"
               }`}
             >
               Continue →
             </button>
           ) : (
             <button
+              type="button"
               onClick={submitTrip}
               disabled={!canContinue() || loading}
-              className={`rounded-full px-8 py-4 text-sm font-bold text-white transition ${
+              className={`rounded-full px-8 py-4 text-sm font-bold transition ${
                 canContinue() && !loading
-                  ? "bg-black hover:bg-black/75"
-                  : "cursor-not-allowed bg-black/20"
+                  ? "bg-black text-white hover:bg-black/75"
+                  : "cursor-not-allowed bg-black/10 text-black/30"
               }`}
             >
               {loading
-                ? "Preparing..."
-                : "Continue to payment →"}
+                ? "Preparing checkout..."
+                : "Review & pay £39.99 →"}
             </button>
           )}
 
         </div>
 
+        <p className="mt-6 text-center text-xs leading-relaxed text-black/30">
+          Secure payment via Stripe · Your trip isn't built until
+          payment is complete.
+        </p>
+
       </section>
+
+      {/* BOTTOM CTA */}
+
+      <section className="border-t border-black/10 bg-white">
+
+        <div className="mx-auto max-w-5xl px-6 py-14 md:px-10 md:py-16">
+
+          <div className="flex flex-col justify-between gap-8 md:flex-row md:items-end">
+
+            <div>
+
+              <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-black/30">
+                OUTBOUND.
+              </p>
+
+              <h2 className="mt-4 max-w-2xl text-3xl font-black leading-[0.95] tracking-[-0.05em] sm:text-4xl">
+                LESS TIME PLANNING.
+                <span className="block text-black/20">
+                  MORE TIME TRAVELLING.
+                </span>
+              </h2>
+
+            </div>
+
+            <Link
+              href="/guides"
+              className="shrink-0 rounded-full bg-black px-7 py-4 text-center text-sm font-bold text-white transition hover:bg-black/75"
+            >
+              Browse travel guides →
+            </Link>
+
+          </div>
+
+        </div>
+
+      </section>
+
+      {/* FOOTER */}
+
+      <footer className="border-t border-black/10 bg-[#f5f3ee]">
+
+        <div className="mx-auto max-w-7xl px-6 py-10 md:px-10">
+
+          <div className="flex flex-col justify-between gap-8 md:flex-row">
+
+            <div>
+
+              <Link
+                href="/"
+                className="text-2xl font-black tracking-[-0.08em]"
+              >
+                OUTBOUND.
+              </Link>
+
+              <p className="mt-3 text-sm text-black/40">
+                Travel planning, rethought.
+              </p>
+
+            </div>
+
+            <div className="grid grid-cols-2 gap-x-12 gap-y-4 text-sm font-medium sm:grid-cols-3">
+
+              <Link
+                href="/destinations"
+                className="hover:opacity-50"
+              >
+                Destinations
+              </Link>
+
+              <Link
+                href="/guides"
+                className="hover:opacity-50"
+              >
+                Travel Guides
+              </Link>
+
+              <Link
+                href="/build-my-trip"
+                className="hover:opacity-50"
+              >
+                Build My Trip
+              </Link>
+
+              <Link
+                href="/bespoke"
+                className="hover:opacity-50"
+              >
+                Bespoke
+              </Link>
+
+              <Link
+                href="/about"
+                className="hover:opacity-50"
+              >
+                About
+              </Link>
+
+              <Link
+                href="/contact"
+                className="hover:opacity-50"
+              >
+                Contact
+              </Link>
+
+              <Link
+                href="/privacy"
+                className="hover:opacity-50"
+              >
+                Privacy
+              </Link>
+
+              <Link
+                href="/terms"
+                className="hover:opacity-50"
+              >
+                Terms
+              </Link>
+
+              <Link
+                href="/refunds"
+                className="hover:opacity-50"
+              >
+                Refunds
+              </Link>
+
+            </div>
+
+          </div>
+
+          <div className="mt-8 border-t border-black/10 pt-6 text-xs text-black/40">
+            © {new Date().getFullYear()} OUTBOUND. All rights reserved.
+          </div>
+
+        </div>
+
+      </footer>
+
     </main>
   );
 }

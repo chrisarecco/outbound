@@ -1,108 +1,131 @@
 import Stripe from "stripe";
-import { NextResponse } from "next/server";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
-const GUIDE_PRICES: Record<string, string> = {
-  thailand: "price_1UDmP1LEJD8lGtcNdQxBTRWi",
-  vietnam: "price_1UDmRRLEJD8lGtcNcXQgW87A",
-  indonesia: "price_1UDmSJLEJD8lGtcNVvwRzzLJ",
-  japan: "price_1UDmT7LEJD8lGtcNgiAhhgb8",
-  philippines: "price_1UDmU5LEJD8lGtcNbQ0qPSjD",
-  australia: "price_1UDmUtLEJD8lGtcNLVOs51qc",
+const guidePrices: Record<string, string> = {
+  thailand: "price_1UDrumLIPTWCzqpTtBQG5boq",
+  vietnam: "price_1UDrv9LIPTWCzqpTZ1Iem3zT",
+  indonesia: "price_1UDrvTLIPTWCzqpTo55jIxjg",
+  japan: "price_1UDrvoLIPTWCzqpT0x2vNbYm",
+  philippines: "price_1UDrw3LIPTWCzqpTruwX5ayv",
+  australia: "price_1UDrwKLIPTWCzqpTMBpQ3p0S",
 };
 
-export async function POST(req: Request) {
+const guideNames: Record<string, string> = {
+  thailand: "Thailand Travel Guide",
+  vietnam: "Vietnam Travel Guide",
+  indonesia: "Indonesia Travel Guide",
+  japan: "Japan Travel Guide",
+  philippines: "Philippines Travel Guide",
+  australia: "Australia's East Coast Travel Guide",
+};
+
+export async function POST(request: Request) {
   try {
-    const body = await req.json();
+    if (!process.env.STRIPE_SECRET_KEY) {
+      console.error("STRIPE_SECRET_KEY is missing.");
+      return Response.json(
+        { error: "Stripe is not configured correctly." },
+        { status: 500 }
+      );
+    }
 
-    const guide = body?.guide;
-    const email = body?.email;
+    const data = await request.json();
 
-    if (!guide || typeof guide !== "string") {
-      return NextResponse.json(
-        { error: "Invalid guide." },
+    const guide = String(data.guide || "").toLowerCase().trim();
+    const email = String(data.email || "").trim();
+
+    if (!guide) {
+      return Response.json(
+        { error: "Guide is required." },
         { status: 400 }
       );
     }
 
-    const guideKey = guide.toLowerCase();
-
-    if (!GUIDE_PRICES[guideKey]) {
-      return NextResponse.json(
-        { error: `Guide not found: ${guideKey}` },
-        { status: 400 }
-      );
-    }
-
-    if (!email || typeof email !== "string") {
-      return NextResponse.json(
+    if (!email) {
+      return Response.json(
         { error: "Email address is required." },
         { status: 400 }
       );
     }
 
-    if (!process.env.STRIPE_SECRET_KEY) {
-      console.error("STRIPE_SECRET_KEY is missing.");
+    if (!email.includes("@")) {
+      return Response.json(
+        { error: "Please enter a valid email address." },
+        { status: 400 }
+      );
+    }
 
-      return NextResponse.json(
-        { error: "Stripe configuration is missing." },
-        { status: 500 }
+    const priceId = guidePrices[guide];
+    const guideName = guideNames[guide];
+
+    if (!priceId || !guideName) {
+      return Response.json(
+        { error: "Invalid travel guide selected." },
+        { status: 400 }
       );
     }
 
     const origin =
-      req.headers.get("origin") || "https://outbound-travel.com";
+      request.headers.get("origin") ||
+      process.env.NEXT_PUBLIC_SITE_URL ||
+      "http://localhost:3000";
 
-    console.log("Creating guide checkout:", {
-      guide: guideKey,
-      email,
-      price: GUIDE_PRICES[guideKey],
-    });
+    console.log("Creating guide checkout session");
+    console.log("Guide:", guide);
+    console.log("Price ID:", priceId);
 
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
 
       line_items: [
         {
-          price: GUIDE_PRICES[guideKey],
+          price: priceId,
           quantity: 1,
         },
       ],
 
-      customer_email: email.trim(),
-
-      success_url: `${origin}/guides/success?guide=${guideKey}&session_id={CHECKOUT_SESSION_ID}`,
-
-      cancel_url: `${origin}/guides/${guideKey}`,
+      customer_email: email,
 
       metadata: {
-        product_type: "travel_guide",
-        guide: guideKey,
-        email: email.trim(),
+        guide,
+        guideName,
+        customerEmail: email,
       },
+
+      success_url: `${origin}/guides/${guide}?success=true&session_id={CHECKOUT_SESSION_ID}`,
+
+      cancel_url: `${origin}/guides/${guide}?cancelled=true`,
+
+      billing_address_collection: "auto",
+
+      allow_promotion_codes: true,
     });
 
-    console.log("Guide checkout created:", session.id);
-
-    return NextResponse.json({
+    return Response.json({
+      success: true,
       url: session.url,
+      sessionId: session.id,
     });
   } catch (error) {
-    console.error("GUIDE CHECKOUT ERROR:", error);
+    console.error("Guide Stripe checkout error:", error);
 
-    const message =
-      error instanceof Error
-        ? error.message
-        : "Unable to create checkout session.";
+    if (error instanceof Stripe.errors.StripeError) {
+      return Response.json(
+        {
+          error:
+            error.message ||
+            "Stripe was unable to create the checkout session.",
+        },
+        { status: 500 }
+      );
+    }
 
-    return NextResponse.json(
+    return Response.json(
       {
-        error: message,
+        error: "Unable to create checkout session. Please try again.",
       },
-      {
-        status: 500,
-      }
+      { status: 500 }
     );
   }
 }

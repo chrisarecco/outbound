@@ -8,6 +8,7 @@ type Guide = {
   name: string;
   title: string;
   image: string;
+  priceId: string;
   description: string;
   intro: string;
   problems: string[];
@@ -30,6 +31,7 @@ const guides: Record<string, Guide> = {
     name: "Thailand",
     title: "THAILAND, DONE PROPERLY.",
     image: "/images/thailand.png",
+    priceId: "price_1UDrumLIPTWCzqpTtBQG5boq",
     description:
       "A practical Thailand travel guide built around better routes, smarter decisions and more time actually enjoying the country.",
     intro:
@@ -115,6 +117,7 @@ const guides: Record<string, Guide> = {
     name: "Vietnam",
     title: "VIETNAM, DONE PROPERLY.",
     image: "/images/vietnam.png",
+    priceId: "price_1UDrv9LIPTWCzqpTZ1Iem3zT",
     description:
       "A practical guide to building a better Vietnam trip, from Hanoi and the north to Hoi An, the south and everything between.",
     intro:
@@ -200,6 +203,7 @@ const guides: Record<string, Guide> = {
     name: "Indonesia",
     title: "INDONESIA, DONE PROPERLY.",
     image: "/images/indonesia.png",
+    priceId: "price_1UDrvTLIPTWCzqpTo55jIxjg",
     description:
       "A practical guide to Indonesia's islands, routes and experiences, designed to help you build a trip that actually works.",
     intro:
@@ -285,6 +289,7 @@ const guides: Record<string, Guide> = {
     name: "Japan",
     title: "JAPAN, DONE PROPERLY.",
     image: "/images/japan.png",
+    priceId: "price_1UDrvoLIPTWCzqpT0x2vNbYm",
     description:
       "A practical Japan travel guide covering Tokyo, Kyoto, Osaka, Fuji, the Alps and how to make the country's transport system work for you.",
     intro:
@@ -371,6 +376,7 @@ const guides: Record<string, Guide> = {
     name: "Philippines",
     title: "THE PHILIPPINES, DONE PROPERLY.",
     image: "/images/philippines.png",
+    priceId: "price_1UDrw3LIPTWCzqpTruwX5ayv",
     description:
       "A practical Philippines travel guide covering Palawan, Cebu, Bohol, Siargao, Boracay and how to build a better island-hopping route.",
     intro:
@@ -456,6 +462,7 @@ const guides: Record<string, Guide> = {
     name: "Australia East Coast",
     title: "AUSTRALIA'S EAST COAST, DONE PROPERLY.",
     image: "/images/australia.png",
+    priceId: "price_1UDrwKLIPTWCzqpTMBpQ3p0S",
     description:
       "A practical guide to planning Australia's East Coast from Sydney to Cairns without turning the trip into one long sequence of transfers.",
     intro:
@@ -551,7 +558,8 @@ export default function GuidePage({
 }) {
   const { country } = use(params);
 
-  const guide = guides[country.toLowerCase()];
+  const slug = country.toLowerCase();
+  const guide = guides[slug];
 
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [email, setEmail] = useState("");
@@ -560,26 +568,28 @@ export default function GuidePage({
 
   if (!guide) {
     return (
-      <main className="min-h-screen bg-white text-black">
-        <SiteHeader />
+      <main className="min-h-screen bg-[#f5f3ee] text-black">
+        <div className="relative z-50 h-[82px] shrink-0 bg-[#f5f3ee] sm:h-[92px]">
+          <SiteHeader />
+        </div>
 
-        <section className="flex min-h-screen items-center justify-center px-6">
+        <section className="flex min-h-[75vh] items-center justify-center px-6">
           <div className="max-w-xl text-center">
-            <p className="mb-4 text-sm font-bold uppercase tracking-[0.2em] text-black/40">
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-black/40">
               OUTBOUND.
             </p>
 
-            <h1 className="text-5xl font-black tracking-tight">
+            <h1 className="mt-5 text-5xl font-black tracking-[-0.05em]">
               Guide not found.
             </h1>
 
-            <p className="mt-5 text-lg text-black/60">
+            <p className="mt-5 text-lg leading-relaxed text-black/55">
               We couldn't find the travel guide you're looking for.
             </p>
 
             <Link
               href="/guides"
-              className="mt-8 inline-block rounded-full bg-black px-7 py-4 text-sm font-bold text-white"
+              className="mt-8 inline-flex rounded-full bg-black px-7 py-4 text-sm font-bold text-white"
             >
               View all guides →
             </Link>
@@ -604,25 +614,33 @@ export default function GuidePage({
     setCheckoutError("");
 
     try {
-      const response = await fetch("/api/create-guide-checkout-session", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          guide: country.toLowerCase(),
-          email: email.trim(),
-        }),
-      });
+      const response = await fetch(
+        "/api/create-guide-checkout-session",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            guide: slug,
+            priceId: guide.priceId,
+            email: email.trim(),
+          }),
+        }
+      );
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "Unable to start checkout.");
+        throw new Error(
+          data.error || "Unable to start checkout."
+        );
       }
 
       if (!data.url) {
-        throw new Error("Stripe checkout URL was not returned.");
+        throw new Error(
+          "Stripe checkout URL was not returned."
+        );
       }
 
       window.location.href = data.url;
@@ -652,367 +670,671 @@ export default function GuidePage({
 
   return (
     <>
-      <main className="bg-white text-black">
-        <section className="relative min-h-[75vh] overflow-hidden bg-black text-white">
-          <img
-            src={guide.image}
-            alt={guide.name}
-            className="absolute inset-0 h-full w-full object-cover opacity-70"
-            onError={(event) => {
-              event.currentTarget.src = "/images/hero.png";
-            }}
-          />
+      <main className="min-h-screen bg-[#f5f3ee] text-black">
 
-          <div className="absolute inset-0 bg-black/45" />
+        {/* HEADER — KEPT SEPARATE FROM ALL IMAGERY */}
 
+        <div className="relative z-50 h-[82px] shrink-0 bg-[#f5f3ee] sm:h-[92px]">
           <SiteHeader />
+        </div>
 
-          <div className="relative mx-auto flex min-h-[75vh] max-w-7xl items-end px-6 pb-14 pt-40 md:px-10 md:pb-20">
-            <div className="max-w-5xl">
-              <p className="mb-5 text-sm font-bold uppercase tracking-[0.2em] text-white/70">
-                OUTBOUND. TRAVEL GUIDE
-              </p>
+        {/* =====================================================
+            PAID GUIDE — FIRST
+        ===================================================== */}
 
-              <h1 className="max-w-5xl text-5xl font-black leading-[0.9] tracking-[-0.05em] sm:text-7xl md:text-8xl">
-                {guide.title}
-              </h1>
+        <section className="border-b border-black/10 bg-[#f5f3ee]">
+          <div className="mx-auto max-w-7xl px-6 py-16 md:px-10 md:py-24">
 
-              <p className="mt-8 max-w-2xl text-lg leading-8 text-white/80 sm:text-xl">
-                {guide.description}
-              </p>
-            </div>
-          </div>
-        </section>
+            <div className="grid gap-12 lg:grid-cols-[1fr_390px] lg:items-end">
 
-        <section className="border-b border-black/10 bg-white">
-          <div className="mx-auto grid max-w-7xl gap-10 px-6 py-12 md:grid-cols-2 md:px-10">
-            <div>
-              <p className="text-sm font-bold uppercase tracking-[0.18em] text-black/40">
-                THE GUIDE
-              </p>
-
-              <h2 className="mt-4 text-4xl font-black tracking-tight sm:text-5xl">
-                More information.
-                <br />
-                Better decisions.
-              </h2>
-            </div>
-
-            <div>
-              <p className="text-lg leading-8 text-black/65">
-                {guide.intro}
-              </p>
-            </div>
-          </div>
-        </section>
-
-        <section className="bg-[#f4f4f0]">
-          <div className="mx-auto max-w-7xl px-6 py-20 md:px-10">
-            <div className="grid gap-12 md:grid-cols-2">
               <div>
-                <p className="text-sm font-bold uppercase tracking-[0.18em] text-black/40">
+
+                <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-black/40 sm:text-xs">
+                  OUTBOUND. TRAVEL GUIDE
+                </p>
+
+                <h1 className="mt-5 max-w-5xl text-5xl font-black leading-[0.88] tracking-[-0.06em] sm:text-6xl md:text-7xl lg:text-[82px]">
+                  {guide.name.toUpperCase()}
+                  <span className="block text-black/20">
+                    DONE PROPERLY.
+                  </span>
+                </h1>
+
+                <p className="mt-7 max-w-2xl text-lg leading-relaxed text-black/55 sm:text-xl">
+                  {guide.description}
+                </p>
+
+              </div>
+
+              {/* PURCHASE CARD */}
+
+              <div className="rounded-[2rem] bg-black p-7 text-white sm:p-9">
+
+                <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-white/40">
+                  DIGITAL TRAVEL GUIDE
+                </p>
+
+                <div className="mt-5 flex items-end justify-between gap-5">
+
+                  <span className="text-6xl font-black tracking-[-0.06em]">
+                    £9.99
+                  </span>
+
+                  <span className="pb-2 text-xs font-bold uppercase tracking-[0.12em] text-white/30">
+                    ONE-OFF
+                  </span>
+
+                </div>
+
+                <p className="mt-6 text-sm leading-relaxed text-white/55">
+                  Practical route planning, destination advice,
+                  transport guidance, itinerary examples and the
+                  decisions that make the trip work.
+                </p>
+
+                <button
+                  type="button"
+                  onClick={openCheckout}
+                  className="mt-8 w-full rounded-full bg-white px-7 py-4 text-sm font-bold text-black transition hover:bg-white/80"
+                >
+                  Get the {guide.name} guide →
+                </button>
+
+                <p className="mt-4 text-center text-[11px] text-white/25">
+                  Secure checkout · Digital delivery
+                </p>
+
+              </div>
+
+            </div>
+
+          </div>
+        </section>
+
+        {/* =====================================================
+            DESTINATION IMAGE
+            COMPLETELY SEPARATE FROM HEADER
+        ===================================================== */}
+
+        <section className="px-6 py-8 md:px-10 md:py-12">
+
+          <div className="mx-auto max-w-7xl">
+
+            <div className="relative h-[42vh] min-h-[320px] overflow-hidden rounded-[2rem] bg-black sm:h-[50vh] md:h-[62vh]">
+
+              <img
+                src={guide.image}
+                alt={guide.name}
+                className="absolute inset-0 h-full w-full object-cover"
+                onError={(event) => {
+                  event.currentTarget.src = "/images/hero.png";
+                }}
+              />
+
+              <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/10 to-transparent" />
+
+              <div className="absolute bottom-7 left-7 sm:bottom-9 sm:left-9">
+
+                <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-white/60">
+                  OUTBOUND.
+                </p>
+
+                <p className="mt-2 text-2xl font-black tracking-[-0.04em] text-white sm:text-3xl">
+                  {guide.name}
+                </p>
+
+              </div>
+
+            </div>
+
+          </div>
+
+        </section>
+
+        {/* =====================================================
+            INTRO
+        ===================================================== */}
+
+        <section className="px-6 py-20 md:px-10 md:py-28">
+
+          <div className="mx-auto max-w-7xl">
+
+            <div className="grid gap-12 lg:grid-cols-[0.8fr_1.2fr]">
+
+              <div>
+
+                <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-black/40 sm:text-xs">
+                  THE GUIDE
+                </p>
+
+                <h2 className="mt-5 max-w-3xl text-4xl font-black leading-[0.9] tracking-[-0.055em] sm:text-5xl md:text-6xl">
+                  MORE INFORMATION.
+                  <span className="block text-black/20">
+                    BETTER DECISIONS.
+                  </span>
+                </h2>
+
+              </div>
+
+              <div className="max-w-2xl lg:pt-8">
+
+                <p className="text-lg leading-[1.7] text-black/60 sm:text-xl">
+                  {guide.intro}
+                </p>
+
+              </div>
+
+            </div>
+
+          </div>
+
+        </section>
+
+        {/* =====================================================
+            PROBLEM
+        ===================================================== */}
+
+        <section className="bg-[#111] text-white">
+
+          <div className="mx-auto max-w-7xl px-6 py-20 md:px-10 md:py-28">
+
+            <div className="grid gap-12 lg:grid-cols-[0.8fr_1.2fr]">
+
+              <div>
+
+                <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-white/35 sm:text-xs">
                   THE PROBLEM
                 </p>
 
-                <h2 className="mt-4 text-4xl font-black tracking-tight sm:text-5xl">
-                  Most trips go wrong before they start.
+                <h2 className="mt-5 text-5xl font-black leading-[0.9] tracking-[-0.055em] md:text-7xl">
+                  MOST TRIPS
+                  <span className="block text-white/20">
+                    GO WRONG
+                  </span>
+                  BEFORE THEY START.
                 </h2>
+
               </div>
 
-              <div className="space-y-4">
-                {guide.problems.map((problem) => (
+              <div className="space-y-3">
+
+                {guide.problems.map((problem, index) => (
+
                   <div
                     key={problem}
-                    className="border-b border-black/10 pb-4 text-lg leading-7 text-black/70"
+                    className="flex gap-5 rounded-2xl bg-white/10 p-5 sm:p-6"
                   >
-                    {problem}
+
+                    <span className="shrink-0 text-sm font-black text-white/25">
+                      0{index + 1}
+                    </span>
+
+                    <p className="font-medium leading-relaxed text-white/75">
+                      {problem}
+                    </p>
+
                   </div>
+
                 ))}
+
               </div>
+
             </div>
+
           </div>
+
         </section>
 
-        <section>
-          <div className="mx-auto max-w-7xl px-6 py-20 md:px-10">
+        {/* =====================================================
+            BUILD YOUR ROUTE
+        ===================================================== */}
+
+        <section className="px-6 py-20 md:px-10 md:py-28">
+
+          <div className="mx-auto max-w-7xl">
+
             <div className="mb-12 max-w-3xl">
-              <p className="text-sm font-bold uppercase tracking-[0.18em] text-black/40">
+
+              <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-black/40 sm:text-xs">
                 BUILD YOUR ROUTE
               </p>
 
-              <h2 className="mt-4 text-4xl font-black tracking-tight sm:text-6xl">
-                Start with the route.
+              <h2 className="mt-5 text-4xl font-black leading-[0.9] tracking-[-0.055em] sm:text-5xl md:text-7xl">
+                START WITH
+                <span className="block text-black/20">
+                  THE ROUTE.
+                </span>
               </h2>
 
-              <p className="mt-6 text-lg leading-8 text-black/60">
-                Before choosing hotels, restaurants or individual activities,
-                work out how the trip should flow. The best itinerary is one
-                where the route makes sense and each destination earns its
-                place.
+              <p className="mt-7 text-lg leading-relaxed text-black/55">
+                Before choosing hotels, restaurants or individual
+                activities, work out how the trip should flow. The best
+                itinerary is one where the route makes sense and each
+                destination earns its place.
               </p>
+
             </div>
 
-            <div className="grid gap-4 md:grid-cols-5">
+            <div className="grid gap-3 md:grid-cols-5">
+
               {guide.route.map((step, index) => (
+
                 <div
                   key={step}
-                  className="rounded-3xl bg-black p-6 text-white"
+                  className="rounded-3xl bg-white p-6 sm:p-7"
                 >
-                  <div className="text-sm font-bold text-white/40">
+
+                  <div className="text-xs font-black text-black/20">
                     0{index + 1}
                   </div>
 
                   <p className="mt-8 text-base font-bold leading-6">
                     {step}
                   </p>
+
                 </div>
+
               ))}
+
             </div>
+
           </div>
+
         </section>
 
-        <section className="bg-black text-white">
-          <div className="mx-auto max-w-7xl px-6 py-20 md:px-10">
-            <div className="mb-12">
-              <p className="text-sm font-bold uppercase tracking-[0.18em] text-white/40">
-                WHERE TO GO
-              </p>
+        {/* =====================================================
+            WHERE TO GO
+        ===================================================== */}
 
-              <h2 className="mt-4 text-4xl font-black tracking-tight sm:text-6xl">
-                The places that matter.
-              </h2>
-            </div>
+        <section className="bg-[#111] text-white">
 
-            <div className="grid gap-px overflow-hidden rounded-3xl bg-white/10 md:grid-cols-2">
+          <div className="mx-auto max-w-7xl px-6 py-20 md:px-10 md:py-28">
+
+            <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-white/35 sm:text-xs">
+              WHERE TO GO
+            </p>
+
+            <h2 className="mt-5 max-w-4xl text-4xl font-black leading-[0.9] tracking-[-0.055em] sm:text-5xl md:text-7xl">
+              THE PLACES
+              <span className="block text-white/20">
+                THAT MATTER.
+              </span>
+            </h2>
+
+            <div className="mt-12 grid gap-3 md:grid-cols-2">
+
               {guide.destinations.map((destination, index) => (
+
                 <div
                   key={destination.name}
-                  className="bg-black p-8 sm:p-10"
+                  className="rounded-3xl bg-white/10 p-7 sm:p-9"
                 >
-                  <p className="text-sm font-bold text-white/30">
+
+                  <p className="text-xs font-black text-white/25">
                     0{index + 1}
                   </p>
 
-                  <h3 className="mt-8 text-3xl font-black tracking-tight">
+                  <h3 className="mt-7 text-3xl font-black tracking-[-0.04em]">
                     {destination.name}
                   </h3>
 
-                  <p className="mt-5 text-base leading-7 text-white/60">
+                  <p className="mt-4 leading-relaxed text-white/55">
                     {destination.text}
                   </p>
+
                 </div>
+
               ))}
+
             </div>
+
           </div>
+
         </section>
 
-        <section className="bg-[#f4f4f0]">
-          <div className="mx-auto max-w-7xl px-6 py-20 md:px-10">
-            <div className="grid gap-12 md:grid-cols-2">
+        {/* =====================================================
+            SAMPLE ITINERARY
+        ===================================================== */}
+
+        <section className="px-6 py-20 md:px-10 md:py-28">
+
+          <div className="mx-auto max-w-7xl">
+
+            <div className="grid gap-12 lg:grid-cols-[0.8fr_1.2fr]">
+
               <div>
-                <p className="text-sm font-bold uppercase tracking-[0.18em] text-black/40">
+
+                <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-black/40 sm:text-xs">
                   EXAMPLE ROUTE
                 </p>
 
-                <h2 className="mt-4 text-4xl font-black tracking-tight sm:text-6xl">
-                  What a good trip can look like.
+                <h2 className="mt-5 text-4xl font-black leading-[0.9] tracking-[-0.055em] sm:text-5xl md:text-7xl">
+                  WHAT A GOOD
+                  <span className="block text-black/20">
+                    TRIP CAN LOOK LIKE.
+                  </span>
                 </h2>
+
               </div>
 
               <div className="space-y-3">
-                {guide.sampleItinerary.map((day) => (
+
+                {guide.sampleItinerary.map((day, index) => (
+
                   <div
                     key={day}
-                    className="rounded-2xl bg-white px-6 py-5 text-base font-bold"
+                    className="flex items-center gap-5 rounded-2xl bg-white px-6 py-5"
                   >
-                    {day}
+
+                    <span className="text-xs font-black text-black/20">
+                      0{index + 1}
+                    </span>
+
+                    <p className="text-base font-bold">
+                      {day}
+                    </p>
+
                   </div>
+
                 ))}
+
               </div>
+
             </div>
+
           </div>
+
         </section>
 
-        <section>
-          <div className="mx-auto grid max-w-7xl gap-12 px-6 py-20 md:grid-cols-2 md:px-10">
-            <div>
-              <p className="text-sm font-bold uppercase tracking-[0.18em] text-black/40">
-                WHAT'S INSIDE
-              </p>
+        {/* =====================================================
+            WHAT'S INSIDE
+        ===================================================== */}
 
-              <h2 className="mt-4 text-4xl font-black tracking-tight sm:text-6xl">
-                Everything you need to plan it properly.
-              </h2>
-            </div>
+        <section className="bg-white">
 
-            <div className="space-y-4">
-              {guide.included.map((item) => (
-                <div
-                  key={item}
-                  className="flex items-start gap-4 border-b border-black/10 pb-4"
-                >
-                  <span className="mt-1 text-lg font-black">✓</span>
+          <div className="mx-auto max-w-7xl px-6 py-20 md:px-10 md:py-28">
 
-                  <p className="text-lg leading-7 text-black/70">{item}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
+            <div className="grid gap-12 lg:grid-cols-[0.8fr_1.2fr]">
 
-        <section className="bg-[#f4f4f0]">
-          <div className="mx-auto max-w-7xl px-6 py-20 md:px-10">
-            <div className="grid gap-12 md:grid-cols-2">
               <div>
-                <p className="text-sm font-bold uppercase tracking-[0.18em] text-black/40">
+
+                <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-black/40 sm:text-xs">
+                  WHAT'S INSIDE
+                </p>
+
+                <h2 className="mt-5 text-4xl font-black leading-[0.9] tracking-[-0.055em] sm:text-5xl md:text-7xl">
+                  EVERYTHING YOU
+                  <span className="block text-black/20">
+                    NEED TO PLAN IT.
+                  </span>
+                </h2>
+
+              </div>
+
+              <div className="space-y-3">
+
+                {guide.included.map((item, index) => (
+
+                  <div
+                    key={item}
+                    className="flex gap-5 rounded-2xl bg-[#f5f3ee] p-6"
+                  >
+
+                    <span className="shrink-0 text-xs font-black text-black/20">
+                      0{index + 1}
+                    </span>
+
+                    <p className="font-semibold leading-relaxed text-black/70">
+                      {item}
+                    </p>
+
+                  </div>
+
+                ))}
+
+              </div>
+
+            </div>
+
+          </div>
+
+        </section>
+
+        {/* =====================================================
+            WHO IT'S FOR
+        ===================================================== */}
+
+        <section className="bg-[#f5f3ee]">
+
+          <div className="mx-auto max-w-7xl px-6 py-20 md:px-10 md:py-28">
+
+            <div className="grid gap-12 lg:grid-cols-[0.8fr_1.2fr]">
+
+              <div>
+
+                <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-black/40 sm:text-xs">
                   WHO IT'S FOR
                 </p>
 
-                <h2 className="mt-4 text-4xl font-black tracking-tight sm:text-6xl">
-                  Built for independent travellers.
+                <h2 className="mt-5 text-4xl font-black leading-[0.9] tracking-[-0.055em] sm:text-5xl md:text-7xl">
+                  BUILT FOR
+                  <span className="block text-black/20">
+                    INDEPENDENT TRAVELLERS.
+                  </span>
                 </h2>
+
               </div>
 
-              <div className="space-y-4">
-                {guide.forWho.map((item) => (
+              <div className="space-y-3">
+
+                {guide.forWho.map((item, index) => (
+
                   <div
                     key={item}
-                    className="rounded-2xl bg-white px-6 py-5 text-lg font-medium"
+                    className="flex gap-5 rounded-2xl bg-white p-6"
                   >
-                    {item}
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </section>
 
-        <section>
-          <div className="mx-auto max-w-4xl px-6 py-20 md:px-10">
-            <div className="mb-12">
-              <p className="text-sm font-bold uppercase tracking-[0.18em] text-black/40">
-                FAQ
-              </p>
+                    <span className="text-xs font-black text-black/20">
+                      0{index + 1}
+                    </span>
 
-              <h2 className="mt-4 text-4xl font-black tracking-tight sm:text-6xl">
-                Before you go.
-              </h2>
-            </div>
-
-            <div className="space-y-8">
-              {guide.faqs.map((faq) => (
-                <div
-                  key={faq.question}
-                  className="border-b border-black/10 pb-8"
-                >
-                  <h3 className="text-xl font-black">{faq.question}</h3>
-
-                  <p className="mt-4 text-base leading-7 text-black/60">
-                    {faq.answer}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section className="bg-black text-white">
-          <div className="mx-auto max-w-7xl px-6 py-20 md:px-10">
-            <div className="grid gap-12 md:grid-cols-2 md:items-center">
-              <div>
-                <p className="text-sm font-bold uppercase tracking-[0.18em] text-white/40">
-                  {guide.name.toUpperCase()} GUIDE
-                </p>
-
-                <h2 className="mt-4 text-5xl font-black tracking-[-0.04em] sm:text-7xl">
-                  More information.
-                  <br />
-                  Less guesswork.
-                </h2>
-
-                <p className="mt-6 max-w-xl text-lg leading-8 text-white/60">
-                  Get the complete {guide.name} travel guide and start planning
-                  your trip with a route that actually makes sense.
-                </p>
-              </div>
-
-              <div className="rounded-3xl bg-white p-8 text-black sm:p-10">
-                <div className="flex items-end justify-between gap-5">
-                  <div>
-                    <p className="text-sm font-bold uppercase tracking-[0.18em] text-black/40">
-                      DIGITAL GUIDE
+                    <p className="font-semibold leading-relaxed text-black/70">
+                      {item}
                     </p>
 
-                    <h3 className="mt-3 text-3xl font-black">
-                      {guide.name}
-                    </h3>
                   </div>
 
-                  <div className="text-right">
-                    <div className="text-5xl font-black">£9.99</div>
-                    <p className="mt-1 text-sm text-black/40">one-off</p>
-                  </div>
-                </div>
+                ))}
 
-                <button
-                  type="button"
-                  onClick={openCheckout}
-                  className="mt-8 w-full rounded-full bg-black px-6 py-4 text-sm font-bold text-white transition hover:bg-black/80"
-                >
-                  Get the {guide.name} guide →
-                </button>
-
-                <p className="mt-4 text-center text-xs text-black/40">
-                  Secure checkout via Stripe.
-                </p>
               </div>
+
             </div>
+
           </div>
+
         </section>
+
+        {/* =====================================================
+            FAQ
+        ===================================================== */}
 
         <section className="bg-white">
-          <div className="mx-auto max-w-7xl px-6 py-20 md:px-10">
-            <div className="rounded-[2rem] bg-[#f4f4f0] p-8 sm:p-12 md:p-16">
-              <p className="text-sm font-bold uppercase tracking-[0.18em] text-black/40">
-                WANT MORE?
-              </p>
 
-              <h2 className="mt-4 max-w-3xl text-4xl font-black tracking-tight sm:text-6xl">
-                Don't just get the guide.
-                <br />
-                Get the trip planned.
-              </h2>
+          <div className="mx-auto max-w-5xl px-6 py-20 md:px-10 md:py-28">
 
-              <p className="mt-6 max-w-2xl text-lg leading-8 text-black/60">
-                If you already know where you want to go but don't want to
-                spend hours building the itinerary yourself, OUTBOUND can
-                create a personalised trip around your dates, budget, travel
-                style and interests.
-              </p>
+            <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-black/40 sm:text-xs">
+              FAQ
+            </p>
 
-              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                <Link
-                  href="/build-my-trip"
-                  className="rounded-full bg-black px-7 py-4 text-center text-sm font-bold text-white transition hover:bg-black/80"
+            <h2 className="mt-5 text-4xl font-black leading-[0.9] tracking-[-0.055em] sm:text-5xl md:text-7xl">
+              BEFORE YOU
+              <span className="block text-black/20">
+                BUY.
+              </span>
+            </h2>
+
+            <div className="mt-12 space-y-3">
+
+              {guide.faqs.map((faq) => (
+
+                <div
+                  key={faq.question}
+                  className="rounded-3xl bg-[#f5f3ee] p-7 sm:p-9"
                 >
-                  Build my trip →
-                </Link>
 
-                <Link
-                  href="/bespoke"
-                  className="rounded-full border border-black/15 px-7 py-4 text-center text-sm font-bold transition hover:bg-black hover:text-white"
-                >
-                  Bespoke planning
-                </Link>
-              </div>
+                  <h3 className="text-xl font-black tracking-[-0.02em]">
+                    {faq.question}
+                  </h3>
+
+                  <p className="mt-4 leading-relaxed text-black/55">
+                    {faq.answer}
+                  </p>
+
+                </div>
+
+              ))}
+
             </div>
+
           </div>
+
         </section>
 
-        <footer className="border-t border-black/10 bg-white">
-          <div className="mx-auto flex max-w-7xl flex-col gap-8 px-6 py-10 md:px-10">
+        {/* =====================================================
+            PAID GUIDE — LAST
+        ===================================================== */}
+
+        <section className="bg-black text-white">
+
+          <div className="mx-auto max-w-5xl px-6 py-24 text-center md:px-10 md:py-32">
+
+            <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-white/35 sm:text-xs">
+              THE {guide.name.toUpperCase()} GUIDE
+            </p>
+
+            <h2 className="mt-6 text-5xl font-black leading-[0.86] tracking-[-0.06em] sm:text-6xl md:text-8xl">
+              PLAN THE
+              <span className="block text-white/20">
+                TRIP PROPERLY.
+              </span>
+            </h2>
+
+            <p className="mx-auto mt-8 max-w-2xl text-lg leading-relaxed text-white/50">
+              Stop collecting travel recommendations and start turning
+              them into a route that actually works.
+            </p>
+
+            <div className="mx-auto mt-10 max-w-md rounded-[2rem] border border-white/10 bg-white/5 p-7 sm:p-9">
+
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/30">
+                DIGITAL TRAVEL GUIDE
+              </p>
+
+              <p className="mt-3 text-6xl font-black tracking-[-0.06em]">
+                £9.99
+              </p>
+
+              <p className="mt-3 text-sm text-white/35">
+                One-off payment
+              </p>
+
+              <button
+                type="button"
+                onClick={openCheckout}
+                className="mt-7 w-full rounded-full bg-white px-8 py-4 text-sm font-bold text-black transition hover:bg-white/80"
+              >
+                Get the {guide.name} guide →
+              </button>
+
+              <p className="mt-4 text-[11px] text-white/25">
+                Secure checkout · Digital delivery
+              </p>
+
+            </div>
+
+          </div>
+
+        </section>
+
+        {/* =====================================================
+            PERSONALISED TRIP
+        ===================================================== */}
+
+        <section className="bg-[#f5f3ee]">
+
+          <div className="mx-auto max-w-7xl px-6 py-20 md:px-10 md:py-28">
+
+            <div className="rounded-[2rem] bg-white p-8 sm:p-10 md:p-14">
+
+              <div className="grid gap-10 lg:grid-cols-[1fr_360px] lg:items-center">
+
+                <div>
+
+                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-black/40">
+                    WANT MORE?
+                  </p>
+
+                  <h2 className="mt-5 max-w-3xl text-4xl font-black leading-[0.9] tracking-[-0.055em] sm:text-5xl md:text-6xl">
+                    DON'T JUST GET
+                    <span className="block text-black/20">
+                      THE GUIDE.
+                    </span>
+                    GET THE TRIP PLANNED.
+                  </h2>
+
+                  <p className="mt-7 max-w-2xl text-lg leading-relaxed text-black/55">
+                    If you don't want to build the itinerary yourself,
+                    OUTBOUND can create a personalised trip around your
+                    dates, budget, travel style and interests.
+                  </p>
+
+                </div>
+
+                <div className="rounded-3xl bg-black p-8 text-white">
+
+                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/35">
+                    PERSONALISED TRIP
+                  </p>
+
+                  <p className="mt-4 text-5xl font-black tracking-[-0.05em]">
+                    £39.99
+                  </p>
+
+                  <p className="mt-4 text-sm leading-relaxed text-white/50">
+                    A personalised route, day-by-day itinerary,
+                    accommodation recommendations, transport,
+                    activities, restaurants and estimated costs.
+                  </p>
+
+                  <Link
+                    href="/build-my-trip"
+                    className="mt-7 block rounded-full bg-white px-7 py-4 text-center text-sm font-bold text-black transition hover:bg-white/80"
+                  >
+                    Build my trip →
+                  </Link>
+
+                </div>
+
+              </div>
+
+            </div>
+
+          </div>
+
+        </section>
+
+        {/* =====================================================
+            FOOTER
+        ===================================================== */}
+
+        <footer className="border-t border-black/10 bg-[#f5f3ee]">
+
+          <div className="mx-auto max-w-7xl px-6 py-10 md:px-10">
+
             <div className="flex flex-col justify-between gap-8 md:flex-row">
+
               <div>
+
                 <Link
                   href="/"
                   className="text-2xl font-black tracking-[-0.08em]"
@@ -1020,102 +1342,119 @@ export default function GuidePage({
                   OUTBOUND.
                 </Link>
 
-                <p className="mt-3 max-w-sm text-sm leading-6 text-black/45">
+                <p className="mt-3 text-sm text-black/40">
                   Travel planning, rethought.
                 </p>
+
               </div>
 
               <div className="grid grid-cols-2 gap-x-12 gap-y-4 text-sm font-medium sm:grid-cols-3">
+
                 <Link
                   href="/destinations"
-                  className="transition hover:opacity-50"
+                  className="hover:opacity-50"
                 >
                   Destinations
                 </Link>
 
                 <Link
                   href="/guides"
-                  className="transition hover:opacity-50"
+                  className="hover:opacity-50"
                 >
                   Travel Guides
                 </Link>
 
                 <Link
                   href="/build-my-trip"
-                  className="transition hover:opacity-50"
+                  className="hover:opacity-50"
                 >
                   Build My Trip
                 </Link>
 
                 <Link
                   href="/bespoke"
-                  className="transition hover:opacity-50"
+                  className="hover:opacity-50"
                 >
                   Bespoke
                 </Link>
 
                 <Link
                   href="/about"
-                  className="transition hover:opacity-50"
+                  className="hover:opacity-50"
                 >
                   About
                 </Link>
 
                 <Link
                   href="/contact"
-                  className="transition hover:opacity-50"
+                  className="hover:opacity-50"
                 >
                   Contact
                 </Link>
 
                 <Link
                   href="/privacy"
-                  className="transition hover:opacity-50"
+                  className="hover:opacity-50"
                 >
                   Privacy
                 </Link>
 
                 <Link
                   href="/terms"
-                  className="transition hover:opacity-50"
+                  className="hover:opacity-50"
                 >
                   Terms
                 </Link>
 
                 <Link
                   href="/refunds"
-                  className="transition hover:opacity-50"
+                  className="hover:opacity-50"
                 >
                   Refunds
                 </Link>
+
               </div>
+
             </div>
 
-            <div className="border-t border-black/10 pt-6 text-xs text-black/40">
+            <div className="mt-8 border-t border-black/10 pt-6 text-xs text-black/40">
               © {new Date().getFullYear()} OUTBOUND. All rights reserved.
             </div>
+
           </div>
+
         </footer>
+
       </main>
 
+      {/* =======================================================
+          STRIPE CHECKOUT MODAL
+      ======================================================= */}
+
       {checkoutOpen && (
+
         <div
           className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 px-5 backdrop-blur-sm"
           onClick={closeCheckout}
         >
+
           <div
-            className="w-full max-w-md rounded-3xl bg-white p-7 text-black shadow-2xl sm:p-9"
+            className="w-full max-w-md rounded-[2rem] bg-white p-7 text-black shadow-2xl sm:p-9"
             onClick={(event) => event.stopPropagation()}
           >
+
             <div className="mb-7 flex items-start justify-between">
+
               <div>
-                <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-black/50">
+
+                <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.2em] text-black/40">
                   OUTBOUND.
                 </p>
 
-                <h2 className="text-3xl font-black tracking-tight">
+                <h2 className="text-3xl font-black tracking-[-0.04em]">
                   Get your {guide.name} guide
                 </h2>
+
               </div>
 
               <button
@@ -1127,14 +1466,16 @@ export default function GuidePage({
               >
                 ×
               </button>
+
             </div>
 
-            <p className="mb-7 text-base leading-7 text-black/60">
-              Enter your email and you'll be taken to Stripe's secure checkout
-              to purchase your guide.
+            <p className="mb-7 text-base leading-7 text-black/55">
+              Enter your email and you'll be taken to Stripe's secure
+              checkout to purchase your guide.
             </p>
 
             <div className="mb-5">
+
               <label
                 htmlFor="guide-email"
                 className="mb-2 block text-sm font-bold"
@@ -1159,12 +1500,15 @@ export default function GuidePage({
                 autoFocus
                 className="w-full rounded-2xl border border-black/15 px-4 py-4 text-base outline-none transition placeholder:text-black/30 focus:border-black"
               />
+
             </div>
 
             {checkoutError && (
+
               <p className="mb-5 rounded-xl bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
                 {checkoutError}
               </p>
+
             )}
 
             <button
@@ -1178,12 +1522,16 @@ export default function GuidePage({
                 : "Continue to secure checkout →"}
             </button>
 
-            <p className="mt-5 text-center text-xs text-black/40">
+            <p className="mt-5 text-center text-xs text-black/35">
               £9.99 one-off payment · Secure checkout via Stripe
             </p>
+
           </div>
+
         </div>
+
       )}
+
     </>
   );
 }
