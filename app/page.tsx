@@ -180,8 +180,8 @@ export default function Home() {
                 Travel planning, rethought
               </p>
 
-              <h1 className="max-w-4xl text-[13vw] font-black leading-[0.84] tracking-[-0.065em] sm:text-7xl md:text-[5.5rem] lg:text-[6.5rem]">
-                YOUR TRIP,
+              <h1 className="max-w-4xl text-[13vw] font-black leading-[0.84] tracking-[-0.065em] sm:text-6xl md:text-[4.5rem] lg:text-[5.5rem]">
+                YOUR TRIP
                 <br />
                 FIGURED OUT.
               </h1>
